@@ -1,6 +1,7 @@
 # Research Topic #7 — Legal/ToS For Puzzle Sources
 
 Status: Resolved
+Implementation Status: 🔒 Active Guardrail — read before enabling any puzzle source; no code implementation required
 Owner: Codex
 
 ## Research Question

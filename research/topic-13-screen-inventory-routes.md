@@ -1,6 +1,7 @@
 # Research Topic #13 — Screen Inventory & Navigation Routes
 
 Status: Resolved
+Implementation Status: ✅ Implemented — Sprint 1; superseded by ARCHITECTURE.md (canonical reference going forward)
 Owner: Claude
 
 ## Research Question

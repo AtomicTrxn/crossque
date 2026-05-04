@@ -1,6 +1,7 @@
 # Research Topic #6 — Push Notification Architecture
 
 Status: Resolved
+Implementation Status: ⬜ Pending — Post-MVP
 Owner: Codex
 
 ## Research Question

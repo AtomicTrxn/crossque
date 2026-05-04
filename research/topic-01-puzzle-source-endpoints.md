@@ -1,6 +1,7 @@
 # Research Topic #1 — Puzzle Source Endpoints
 
 Status: Resolved
+Implementation Status: ⬜ Pending — Sprint 8; blocked by topic-07 legal review before any source is enabled
 Owner: Claude
 Researched: 2026-04-30
 

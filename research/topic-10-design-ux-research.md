@@ -1,6 +1,7 @@
 # Research Topic #10 — Design & UX Research
 
 Status: Resolved
+Implementation Status: 🔄 Partially Implemented — Material 3 theme + CrosswordTheme colour tokens shipped Sprint 1; grid highlight colours + RobotoMono shipped Sprint 3; animations, haptics, completion feedback pending Sprint 6
 Owner: Claude
 
 ## Research Question

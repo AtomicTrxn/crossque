@@ -1,6 +1,7 @@
 # Research Topic #11 — Game Mechanics & Input Feedback
 
 Status: Resolved
+Implementation Status: 🔄 Partially Implemented — basic letter input + auto-advance shipped Sprint 3; check/reveal/hint rules + mistake counting pending Sprint 5
 Owner: Codex
 
 ## Research Question

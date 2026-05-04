@@ -1,6 +1,7 @@
 # Research Topic #9 — Backend Sync Decision
 
 Status: Resolved
+Implementation Status: ⬜ Pending — Post-MVP; NoOpSyncAdapter stub shipped Sprint 1, real sync deferred to Phase 2
 Owner: Claude
 Researched: 2026-04-30
 

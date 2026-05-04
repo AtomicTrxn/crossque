@@ -1,6 +1,7 @@
 # Research Topic #4 — Monetization Model
 
 Status: Resolved
+Implementation Status: ⬜ Pending — Post-MVP; FreeEntitlementService stub shipped Sprint 1
 Owner: Codex
 
 ## Research Question
