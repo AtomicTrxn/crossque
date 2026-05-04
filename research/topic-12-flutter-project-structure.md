@@ -1,6 +1,7 @@
 # Research Topic #12 — Flutter Project Structure & Folder Conventions
 
 Status: Resolved
+Implementation Status: ✅ Implemented — Sprint 1; superseded by ARCHITECTURE.md (canonical reference going forward)
 Owner: Claude
 
 ## Research Question

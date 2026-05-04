@@ -1,6 +1,7 @@
 # Research Topic #3 — Canvas + TalkBack/VoiceOver Accessibility
 
 Status: Resolved
+Implementation Status: ⬜ Pending — Sprint 6
 Owner: Codex
 
 ## Research Question

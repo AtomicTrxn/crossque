@@ -1,6 +1,7 @@
 # Research Topic #15 — Streak & Stats Algorithm
 
 Status: Resolved
+Implementation Status: ⬜ Pending — Sprint 7; schema columns already in solve_sessions_table.dart
 Owner: Codex
 
 ## Research Question

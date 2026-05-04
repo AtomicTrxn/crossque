@@ -1,6 +1,7 @@
 # Research Topic #8 — CI/CD And Release Pipeline
 
 Status: Resolved
+Implementation Status: ⬜ Pending — Post-MVP (before first Play Store submission)
 Owner: Codex
 
 ## Research Question

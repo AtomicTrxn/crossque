@@ -1,6 +1,7 @@
 # Research Topic #5 — Analytics & Crash Reporting
 
 Status: Resolved
+Implementation Status: ⬜ Pending — Post-MVP; CrashReporter stub shipped Sprint 1
 Owner: Codex
 
 ## Research Question

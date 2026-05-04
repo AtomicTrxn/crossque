@@ -1,6 +1,7 @@
 # Research Topic #18 — Privacy Policy & Store Compliance
 
 Status: Resolved
+Implementation Status: ⬜ Pending — required before Play Store submission; human review required before publishing
 Owner: Claude
 
 ## Research Question
