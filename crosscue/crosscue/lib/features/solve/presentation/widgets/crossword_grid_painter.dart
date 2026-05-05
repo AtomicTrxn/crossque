@@ -14,14 +14,12 @@ class CrosswordGridPainter extends CustomPainter {
     required this.progress,
     required this.solveState,
     required this.theme,
-    required this.textTheme,
   });
 
   final Puzzle puzzle;
   final Grid<CellProgress> progress;
   final SolveState solveState;
   final CrosswordTheme theme;
-  final TextTheme textTheme;
 
   @override
   void paint(Canvas canvas, Size size) {

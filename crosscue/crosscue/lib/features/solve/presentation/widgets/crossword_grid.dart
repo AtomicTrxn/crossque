@@ -184,7 +184,6 @@ class _CrosswordGridState extends ConsumerState<CrosswordGrid> {
                   progress: widget.solveState.progress,
                   solveState: widget.solveState,
                   theme: xwTheme,
-                  textTheme: Theme.of(context).textTheme,
                 ),
               ),
             ),
