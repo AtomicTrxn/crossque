@@ -3,11 +3,11 @@ import 'dart:async';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../../../../features/import/presentation/providers/import_providers.dart';
+import '../../../../features/solve/presentation/providers/solve_providers.dart';
 import '../../domain/models/cell_progress.dart';
 import '../../domain/models/clue.dart';
 import '../../domain/models/enums.dart';
 import '../../domain/models/focus_position.dart';
-import '../../domain/models/grid.dart';
 import 'solve_state.dart';
 
 part 'solve_notifier.g.dart';
@@ -15,6 +15,7 @@ part 'solve_notifier.g.dart';
 @riverpod
 class SolveNotifier extends _$SolveNotifier {
   StreamSubscription<int>? _timerSub;
+  Timer? _saveDebounce;
 
   /// Safely read the current SolveState from AsyncValue.
   SolveState? get _s => switch (state) {
@@ -26,42 +27,28 @@ class SolveNotifier extends _$SolveNotifier {
   Future<SolveState> build(String puzzleId) async {
     ref.onDispose(() {
       _timerSub?.cancel();
+      _saveDebounce?.cancel();
     });
 
-    final repo = ref.read(importRepositoryProvider);
-    final puzzle = await repo.getPuzzle(Uri.decodeComponent(puzzleId));
+    final importRepo = ref.read(importRepositoryProvider);
+    final solveRepo = ref.read(solveRepositoryProvider);
+
+    final puzzle = await importRepo.getPuzzle(Uri.decodeComponent(puzzleId));
     if (puzzle == null) throw Exception('Puzzle not found: $puzzleId');
 
-    // Blank progress grid
-    final progress = Grid<CellProgress>.generate(
-      puzzle.width,
-      puzzle.height,
-      (r, c) => CellProgress.blank,
-    );
-
-    // Find first non-black cell
-    FocusPosition focus = const FocusPosition(
-      row: 0,
-      col: 0,
-      direction: Direction.across,
-    );
-    outer:
-    for (var r = 0; r < puzzle.height; r++) {
-      for (var c = 0; c < puzzle.width; c++) {
-        if (!puzzle.grid.cell(r, c).isBlack) {
-          focus = FocusPosition(row: r, col: c, direction: Direction.across);
-          break outer;
-        }
-      }
-    }
+    // Create or resume a session — restores progress and focus from DB.
+    final session = await solveRepo.createOrResumeSession(puzzle);
 
     _startTimer();
+
     return SolveState(
       puzzle: puzzle,
-      progress: progress,
-      focus: focus,
-      status: PuzzleStatus.unsolved,
-      elapsedSeconds: 0,
+      progress: session.progress,
+      focus: session.focus,
+      status: PuzzleStatus.inProgress,
+      elapsedSeconds: session.elapsedMs ~/ 1000,
+      isPaused: session.isPaused,
+      sessionId: session.sessionId,
     );
   }
 
@@ -71,7 +58,8 @@ class SolveNotifier extends _$SolveNotifier {
 
   void _startTimer() {
     _timerSub?.cancel();
-    _timerSub = Stream<int>.periodic(const Duration(seconds: 1), (i) => i).listen((_) {
+    _timerSub =
+        Stream<int>.periodic(const Duration(seconds: 1), (i) => i).listen((_) {
       final s = _s;
       if (s == null || s.isPaused) return;
       if (s.status == PuzzleStatus.solved ||
@@ -87,6 +75,7 @@ class SolveNotifier extends _$SolveNotifier {
     final s = _s;
     if (s == null || s.isPaused) return;
     state = AsyncData(s.copyWith(isPaused: true));
+    _saveNow(); // persist isPaused immediately
   }
 
   void resume() {
@@ -142,6 +131,7 @@ class SolveNotifier extends _$SolveNotifier {
     );
     final nextFocus = _advanceFocus(s, r, c);
     state = AsyncData(s.copyWith(progress: newProgress, focus: nextFocus));
+    _scheduleSave();
     _checkCompletion();
   }
 
@@ -162,6 +152,35 @@ class SolveNotifier extends _$SolveNotifier {
           s.progress.withCell(prevFocus.row, prevFocus.col, CellProgress.blank);
       state = AsyncData(s.copyWith(progress: newProgress, focus: prevFocus));
     }
+    _scheduleSave();
+  }
+
+  // ---------------------------------------------------------------------------
+  // Autosave
+  // ---------------------------------------------------------------------------
+
+  /// Schedules a debounced save ~500 ms after the last cell change.
+  void _scheduleSave() {
+    _saveDebounce?.cancel();
+    _saveDebounce =
+        Timer(const Duration(milliseconds: 500), _saveNow);
+  }
+
+  /// Immediately persists the current state to the DB.
+  Future<void> _saveNow() async {
+    final s = _s;
+    if (s == null || s.sessionId == null) return;
+    final repo = ref.read(solveRepositoryProvider);
+    await repo.saveProgress(
+      sessionId: s.sessionId!,
+      puzzleWidth: s.puzzle.width,
+      puzzleHeight: s.puzzle.height,
+      progress: s.progress,
+      focus: s.focus,
+      elapsedMs: s.elapsedSeconds * 1000,
+      status: s.status,
+      isPaused: s.isPaused,
+    );
   }
 
   // ---------------------------------------------------------------------------
@@ -237,7 +256,25 @@ class SolveNotifier extends _$SolveNotifier {
         }
       }
     }
-    state = AsyncData(s.copyWith(status: PuzzleStatus.solved));
     _timerSub?.cancel();
+    _saveDebounce?.cancel();
+
+    final completed = s.copyWith(status: PuzzleStatus.solved);
+    state = AsyncData(completed);
+
+    // Persist the completed state immediately
+    if (s.sessionId != null) {
+      final repo = ref.read(solveRepositoryProvider);
+      repo.markComplete(
+        sessionId: s.sessionId!,
+        puzzleWidth: s.puzzle.width,
+        puzzleHeight: s.puzzle.height,
+        progress: completed.progress,
+        focus: completed.focus,
+        elapsedMs: completed.elapsedSeconds * 1000,
+        status: PuzzleStatus.solved,
+        completionType: CompletionType.clean,
+      );
+    }
   }
 }
