@@ -16,25 +16,24 @@ final class SessionLoadResult {
     required this.elapsedMs,
     required this.isPaused,
     required this.isResumed,
+    this.checkCount = 0,
+    this.revealCount = 0,
+    this.usedCheck = false,
+    this.usedReveal = false,
+    this.cleanSolveEligible = true,
   });
 
-  /// The Drift row id for this session (used for all subsequent saves).
   final int sessionId;
-
-  /// Cell progress restored from DB (or blank grid for new sessions).
   final Grid<CellProgress> progress;
-
-  /// Focus position restored from DB (or first non-black cell for new sessions).
   final FocusPosition focus;
-
-  /// Active solving time in milliseconds (restored from DB or 0).
   final int elapsedMs;
-
-  /// Whether the session was paused when last saved.
   final bool isPaused;
-
-  /// True when an existing session was resumed; false for a brand-new session.
   final bool isResumed;
+  final int checkCount;
+  final int revealCount;
+  final bool usedCheck;
+  final bool usedReveal;
+  final bool cleanSolveEligible;
 }
 
 class SolveRepositoryImpl {
@@ -66,6 +65,11 @@ class SolveRepositoryImpl {
         elapsedMs: existing.elapsedMs,
         isPaused: existing.isPaused,
         isResumed: true,
+        checkCount: existing.checkCount,
+        revealCount: existing.revealCount,
+        usedCheck: existing.usedCheck,
+        usedReveal: existing.usedReveal,
+        cleanSolveEligible: existing.cleanSolveEligible,
       );
     }
 
@@ -118,6 +122,11 @@ class SolveRepositoryImpl {
     required int elapsedMs,
     required PuzzleStatus status,
     required bool isPaused,
+    required int checkCount,
+    required int revealCount,
+    required bool usedCheck,
+    required bool usedReveal,
+    required bool cleanSolveEligible,
   }) async {
     await dao.updateSession(
       sessionId: sessionId,
@@ -127,6 +136,11 @@ class SolveRepositoryImpl {
       direction: focus.direction.name,
       status: _statusToDb(status),
       isPaused: isPaused,
+      checkCount: checkCount,
+      revealCount: revealCount,
+      usedCheck: usedCheck,
+      usedReveal: usedReveal,
+      cleanSolveEligible: cleanSolveEligible,
     );
 
     await dao.saveCellProgress(sessionId, progress, puzzleWidth, puzzleHeight);
@@ -142,6 +156,11 @@ class SolveRepositoryImpl {
     required int elapsedMs,
     required PuzzleStatus status,
     required CompletionType completionType,
+    required int checkCount,
+    required int revealCount,
+    required bool usedCheck,
+    required bool usedReveal,
+    required bool cleanSolveEligible,
   }) async {
     final now = DateTime.now();
     final solvedDateLocal = DateFormat('yyyy-MM-dd').format(now);
@@ -155,6 +174,11 @@ class SolveRepositoryImpl {
       direction: focus.direction.name,
       status: _statusToDb(status),
       isPaused: false,
+      checkCount: checkCount,
+      revealCount: revealCount,
+      usedCheck: usedCheck,
+      usedReveal: usedReveal,
+      cleanSolveEligible: cleanSolveEligible,
       completionType: completionType.name,
       completedAt: now.toUtc(),
       solvedDateLocal: solvedDateLocal,
