@@ -7,7 +7,7 @@ class ArchiveScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Archive')),
-      body: const Center(child: Text('Archive — Sprint 6')),
+      body: const Center(child: Text('Archive — coming in Sprint 7')),
     );
   }
 }
