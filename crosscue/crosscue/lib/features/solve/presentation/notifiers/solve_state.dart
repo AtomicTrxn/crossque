@@ -17,6 +17,7 @@ class SolveState {
     required this.status,
     required this.elapsedSeconds,
     this.isPaused = false,
+    this.sessionId,
   });
 
   final Puzzle puzzle;
@@ -25,6 +26,10 @@ class SolveState {
   final PuzzleStatus status;
   final int elapsedSeconds;
   final bool isPaused;
+
+  /// The Drift row id for the active solve session.
+  /// Null only before the first autosave completes (should never be null in practice).
+  final int? sessionId;
 
   // ---------------------------------------------------------------------------
   // Derived helpers
@@ -86,6 +91,7 @@ class SolveState {
     PuzzleStatus? status,
     int? elapsedSeconds,
     bool? isPaused,
+    int? sessionId,
   }) {
     return SolveState(
       puzzle: puzzle,
@@ -94,6 +100,7 @@ class SolveState {
       status: status ?? this.status,
       elapsedSeconds: elapsedSeconds ?? this.elapsedSeconds,
       isPaused: isPaused ?? this.isPaused,
+      sessionId: sessionId ?? this.sessionId,
     );
   }
 
