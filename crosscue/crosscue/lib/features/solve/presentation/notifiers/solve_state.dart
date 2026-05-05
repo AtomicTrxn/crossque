@@ -18,6 +18,11 @@ class SolveState {
     required this.elapsedSeconds,
     this.isPaused = false,
     this.sessionId,
+    this.checkCount = 0,
+    this.revealCount = 0,
+    this.usedCheck = false,
+    this.usedReveal = false,
+    this.cleanSolveEligible = true,
   });
 
   final Puzzle puzzle;
@@ -30,6 +35,25 @@ class SolveState {
   /// The Drift row id for the active solve session.
   /// Null only before the first autosave completes (should never be null in practice).
   final int? sessionId;
+
+  // ---------------------------------------------------------------------------
+  // Check / reveal counters (topic-11)
+  // ---------------------------------------------------------------------------
+
+  /// Number of times any check action has been triggered.
+  final int checkCount;
+
+  /// Number of times any reveal action has been triggered.
+  final int revealCount;
+
+  /// True once the user has checked at least one cell/word/grid.
+  final bool usedCheck;
+
+  /// True once the user has revealed at least one cell/word.
+  final bool usedReveal;
+
+  /// False once any reveal action is used; disqualifies clean solve and PB.
+  final bool cleanSolveEligible;
 
   // ---------------------------------------------------------------------------
   // Derived helpers
@@ -92,6 +116,11 @@ class SolveState {
     int? elapsedSeconds,
     bool? isPaused,
     int? sessionId,
+    int? checkCount,
+    int? revealCount,
+    bool? usedCheck,
+    bool? usedReveal,
+    bool? cleanSolveEligible,
   }) {
     return SolveState(
       puzzle: puzzle,
@@ -101,6 +130,11 @@ class SolveState {
       elapsedSeconds: elapsedSeconds ?? this.elapsedSeconds,
       isPaused: isPaused ?? this.isPaused,
       sessionId: sessionId ?? this.sessionId,
+      checkCount: checkCount ?? this.checkCount,
+      revealCount: revealCount ?? this.revealCount,
+      usedCheck: usedCheck ?? this.usedCheck,
+      usedReveal: usedReveal ?? this.usedReveal,
+      cleanSolveEligible: cleanSolveEligible ?? this.cleanSolveEligible,
     );
   }
 

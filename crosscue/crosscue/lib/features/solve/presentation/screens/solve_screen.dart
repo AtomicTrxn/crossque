@@ -87,26 +87,27 @@ class _SolveScreenState extends ConsumerState<SolveScreen>
             ),
             actions: [
               // Timer — tap to pause/resume (topic-17 §4)
-              Padding(
-                padding: const EdgeInsets.only(right: 16),
-                child: GestureDetector(
-                  onTap: () {
-                    final notifier =
-                        ref.read(solveProvider(widget.puzzleId).notifier);
-                    if (solveState.isPaused) {
-                      notifier.resume();
-                    } else {
-                      notifier.pause();
-                    }
-                  },
-                  child: Center(
-                    child: _TimerDisplay(
-                      seconds: solveState.elapsedSeconds,
-                      isPaused: solveState.isPaused,
-                    ),
+              GestureDetector(
+                onTap: () {
+                  final notifier =
+                      ref.read(solveProvider(widget.puzzleId).notifier);
+                  if (solveState.isPaused) {
+                    notifier.resume();
+                  } else {
+                    notifier.pause();
+                  }
+                },
+                child: Center(
+                  child: _TimerDisplay(
+                    seconds: solveState.elapsedSeconds,
+                    isPaused: solveState.isPaused,
                   ),
                 ),
               ),
+              // Check / Reveal overflow menu (topic-11)
+              if (!isComplete)
+                _CheckRevealMenu(puzzleId: widget.puzzleId),
+              const SizedBox(width: 4),
             ],
           ),
           body: Stack(
@@ -208,6 +209,106 @@ class _PauseOverlay extends StatelessWidget {
         ),
       ),
     );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Check / Reveal overflow menu (topic-11)
+// ---------------------------------------------------------------------------
+
+enum _CheckRevealOption {
+  checkLetter,
+  checkWord,
+  checkPuzzle,
+  divider,
+  revealLetter,
+  revealWord,
+  revealPuzzle,
+}
+
+class _CheckRevealMenu extends ConsumerWidget {
+  const _CheckRevealMenu({required this.puzzleId});
+  final String puzzleId;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return PopupMenuButton<_CheckRevealOption>(
+      icon: const Icon(Icons.more_vert),
+      tooltip: 'Check / Reveal',
+      onSelected: (option) => _onSelected(context, ref, option),
+      itemBuilder: (_) => const [
+        PopupMenuItem(
+          value: _CheckRevealOption.checkLetter,
+          child: Text('Check letter'),
+        ),
+        PopupMenuItem(
+          value: _CheckRevealOption.checkWord,
+          child: Text('Check word'),
+        ),
+        PopupMenuItem(
+          value: _CheckRevealOption.checkPuzzle,
+          child: Text('Check puzzle'),
+        ),
+        PopupMenuDivider(),
+        PopupMenuItem(
+          value: _CheckRevealOption.revealLetter,
+          child: Text('Reveal letter'),
+        ),
+        PopupMenuItem(
+          value: _CheckRevealOption.revealWord,
+          child: Text('Reveal word'),
+        ),
+        PopupMenuItem(
+          value: _CheckRevealOption.revealPuzzle,
+          child: Text('Reveal puzzle'),
+        ),
+      ],
+    );
+  }
+
+  Future<void> _onSelected(
+    BuildContext context,
+    WidgetRef ref,
+    _CheckRevealOption option,
+  ) async {
+    final notifier = ref.read(solveProvider(puzzleId).notifier);
+
+    switch (option) {
+      case _CheckRevealOption.checkLetter:
+        notifier.checkCell();
+      case _CheckRevealOption.checkWord:
+        notifier.checkWord();
+      case _CheckRevealOption.checkPuzzle:
+        notifier.checkGrid();
+      case _CheckRevealOption.revealLetter:
+        notifier.revealCell();
+      case _CheckRevealOption.revealWord:
+        notifier.revealWord();
+      case _CheckRevealOption.revealPuzzle:
+        // Confirm before revealing the whole puzzle (topic-11)
+        final confirmed = await showDialog<bool>(
+          context: context,
+          builder: (ctx) => AlertDialog(
+            title: const Text('Reveal puzzle?'),
+            content: const Text(
+              'This will fill the whole puzzle. The solve will not count toward your streak.',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx, false),
+                child: const Text('Cancel'),
+              ),
+              FilledButton(
+                onPressed: () => Navigator.pop(ctx, true),
+                child: const Text('Reveal'),
+              ),
+            ],
+          ),
+        );
+        if (confirmed == true) notifier.revealPuzzle();
+      case _CheckRevealOption.divider:
+        break;
+    }
   }
 }
 

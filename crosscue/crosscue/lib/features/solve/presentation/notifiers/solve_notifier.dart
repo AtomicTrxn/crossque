@@ -36,7 +36,6 @@ class SolveNotifier extends _$SolveNotifier {
     final puzzle = await importRepo.getPuzzle(Uri.decodeComponent(puzzleId));
     if (puzzle == null) throw Exception('Puzzle not found: $puzzleId');
 
-    // Create or resume a session — restores progress and focus from DB.
     final session = await solveRepo.createOrResumeSession(puzzle);
 
     _startTimer();
@@ -49,6 +48,11 @@ class SolveNotifier extends _$SolveNotifier {
       elapsedSeconds: session.elapsedMs ~/ 1000,
       isPaused: session.isPaused,
       sessionId: session.sessionId,
+      checkCount: session.checkCount,
+      revealCount: session.revealCount,
+      usedCheck: session.usedCheck,
+      usedReveal: session.usedReveal,
+      cleanSolveEligible: session.cleanSolveEligible,
     );
   }
 
@@ -62,11 +66,7 @@ class SolveNotifier extends _$SolveNotifier {
         Stream<int>.periodic(const Duration(seconds: 1), (i) => i).listen((_) {
       final s = _s;
       if (s == null || s.isPaused) return;
-      if (s.status == PuzzleStatus.solved ||
-          s.status == PuzzleStatus.solvedWithHelp ||
-          s.status == PuzzleStatus.revealed) {
-        return;
-      }
+      if (_isTerminal(s.status)) return;
       state = AsyncData(s.copyWith(elapsedSeconds: s.elapsedSeconds + 1));
     });
   }
@@ -75,7 +75,7 @@ class SolveNotifier extends _$SolveNotifier {
     final s = _s;
     if (s == null || s.isPaused) return;
     state = AsyncData(s.copyWith(isPaused: true));
-    _saveNow(); // persist isPaused immediately
+    _saveNow();
   }
 
   void resume() {
@@ -91,7 +91,6 @@ class SolveNotifier extends _$SolveNotifier {
   void tapCell(int row, int col) {
     final s = _s;
     if (s == null) return;
-
     if (s.puzzle.grid.cell(row, col).isBlack) return;
 
     if (s.focus.row == row && s.focus.col == col) {
@@ -124,6 +123,16 @@ class SolveNotifier extends _$SolveNotifier {
 
     final r = s.focus.row;
     final c = s.focus.col;
+
+    // Do not overwrite a revealed cell (topic-11)
+    if (s.progress.cell(r, c).state == CellState.revealed) return;
+
+    // Clear checkedIncorrect when the user replaces the letter (topic-11)
+    var currentState = s.progress.cell(r, c).state;
+    if (currentState == CellState.checkedIncorrect) {
+      currentState = CellState.filled;
+    }
+
     final newProgress = s.progress.withCell(
       r,
       c,
@@ -143,30 +152,227 @@ class SolveNotifier extends _$SolveNotifier {
     final c = s.focus.col;
     final current = s.progress.cell(r, c);
 
+    // Do not erase a revealed cell
+    if (current.state == CellState.revealed) return;
+
     if (current.letter.isNotEmpty) {
       final newProgress = s.progress.withCell(r, c, CellProgress.blank);
       state = AsyncData(s.copyWith(progress: newProgress));
     } else {
       final prevFocus = _retreatFocus(s, r, c);
-      final newProgress =
-          s.progress.withCell(prevFocus.row, prevFocus.col, CellProgress.blank);
-      state = AsyncData(s.copyWith(progress: newProgress, focus: prevFocus));
+      final prev = s.progress.cell(prevFocus.row, prevFocus.col);
+      // Do not erase a revealed cell when retreating
+      if (prev.state == CellState.revealed) {
+        state = AsyncData(s.copyWith(focus: prevFocus));
+      } else {
+        final newProgress =
+            s.progress.withCell(prevFocus.row, prevFocus.col, CellProgress.blank);
+        state = AsyncData(s.copyWith(progress: newProgress, focus: prevFocus));
+      }
     }
     _scheduleSave();
+  }
+
+  // ---------------------------------------------------------------------------
+  // Check actions (topic-11)
+  // ---------------------------------------------------------------------------
+
+  /// Checks the focused cell. Empty cells are skipped silently.
+  void checkCell() {
+    final s = _s;
+    if (s == null || _isTerminal(s.status)) return;
+
+    final r = s.focus.row;
+    final c = s.focus.col;
+    final cell = s.progress.cell(r, c);
+    if (cell.letter.isEmpty) return;
+
+    final correct =
+        cell.letter.toUpperCase() == s.puzzle.grid.cell(r, c).solution.toUpperCase();
+    final newState =
+        correct ? CellState.checkedCorrect : CellState.checkedIncorrect;
+
+    final newProgress = s.progress.withCell(
+      r, c, cell.copyWith(state: newState),
+    );
+
+    state = AsyncData(s.copyWith(
+      progress: newProgress,
+      checkCount: s.checkCount + 1,
+      usedCheck: true,
+    ));
+    _scheduleSave();
+  }
+
+  /// Checks all filled cells in the active word.
+  void checkWord() {
+    final s = _s;
+    if (s == null || _isTerminal(s.status)) return;
+
+    final clue = _clueFor(s, s.focus.row, s.focus.col, s.focus.direction);
+    if (clue == null) return;
+
+    var progress = s.progress;
+    for (final (r, c) in _clueCells(clue)) {
+      final cell = progress.cell(r, c);
+      if (cell.letter.isEmpty) continue;
+      final correct = cell.letter.toUpperCase() ==
+          s.puzzle.grid.cell(r, c).solution.toUpperCase();
+      progress = progress.withCell(
+        r, c,
+        cell.copyWith(
+            state: correct ? CellState.checkedCorrect : CellState.checkedIncorrect),
+      );
+    }
+
+    state = AsyncData(s.copyWith(
+      progress: progress,
+      checkCount: s.checkCount + 1,
+      usedCheck: true,
+    ));
+    _scheduleSave();
+  }
+
+  /// Checks all filled cells in the puzzle.
+  void checkGrid() {
+    final s = _s;
+    if (s == null || _isTerminal(s.status)) return;
+
+    var progress = s.progress;
+    for (var r = 0; r < s.puzzle.height; r++) {
+      for (var c = 0; c < s.puzzle.width; c++) {
+        if (s.puzzle.grid.cell(r, c).isBlack) continue;
+        final cell = progress.cell(r, c);
+        if (cell.letter.isEmpty) continue;
+        final correct = cell.letter.toUpperCase() ==
+            s.puzzle.grid.cell(r, c).solution.toUpperCase();
+        progress = progress.withCell(
+          r, c,
+          cell.copyWith(
+              state: correct ? CellState.checkedCorrect : CellState.checkedIncorrect),
+        );
+      }
+    }
+
+    state = AsyncData(s.copyWith(
+      progress: progress,
+      checkCount: s.checkCount + 1,
+      usedCheck: true,
+    ));
+    _scheduleSave();
+  }
+
+  // ---------------------------------------------------------------------------
+  // Reveal actions (topic-11)
+  // ---------------------------------------------------------------------------
+
+  /// Fills the focused cell with the solution and marks it revealed.
+  void revealCell() {
+    final s = _s;
+    if (s == null || _isTerminal(s.status)) return;
+
+    final r = s.focus.row;
+    final c = s.focus.col;
+    if (s.puzzle.grid.cell(r, c).isBlack) return;
+
+    final solution = s.puzzle.grid.cell(r, c).solution;
+    final newProgress = s.progress.withCell(
+      r, c,
+      s.progress.cell(r, c).copyWith(
+            letter: solution,
+            state: CellState.revealed,
+          ),
+    );
+
+    final updated = s.copyWith(
+      progress: newProgress,
+      revealCount: s.revealCount + 1,
+      usedReveal: true,
+      cleanSolveEligible: false,
+    );
+    state = AsyncData(updated);
+    _scheduleSave();
+    _checkCompletion();
+  }
+
+  /// Fills all cells in the active word with their solutions.
+  void revealWord() {
+    final s = _s;
+    if (s == null || _isTerminal(s.status)) return;
+
+    final clue = _clueFor(s, s.focus.row, s.focus.col, s.focus.direction);
+    if (clue == null) return;
+
+    var progress = s.progress;
+    for (final (r, c) in _clueCells(clue)) {
+      final solution = s.puzzle.grid.cell(r, c).solution;
+      progress = progress.withCell(
+        r, c,
+        progress.cell(r, c).copyWith(
+              letter: solution,
+              state: CellState.revealed,
+            ),
+      );
+    }
+
+    final updated = s.copyWith(
+      progress: progress,
+      revealCount: s.revealCount + 1,
+      usedReveal: true,
+      cleanSolveEligible: false,
+    );
+    state = AsyncData(updated);
+    _scheduleSave();
+    _checkCompletion();
+  }
+
+  /// Fills the entire puzzle — sets status to [PuzzleStatus.revealed]
+  /// (does NOT count as a solve; topic-11).
+  void revealPuzzle() {
+    final s = _s;
+    if (s == null || _isTerminal(s.status)) return;
+
+    var progress = s.progress;
+    for (var r = 0; r < s.puzzle.height; r++) {
+      for (var c = 0; c < s.puzzle.width; c++) {
+        if (s.puzzle.grid.cell(r, c).isBlack) continue;
+        final solution = s.puzzle.grid.cell(r, c).solution;
+        progress = progress.withCell(
+          r, c,
+          progress.cell(r, c).copyWith(
+                letter: solution,
+                state: CellState.revealed,
+              ),
+        );
+      }
+    }
+
+    _timerSub?.cancel();
+    _saveDebounce?.cancel();
+
+    final completed = s.copyWith(
+      progress: progress,
+      status: PuzzleStatus.revealed,
+      revealCount: s.revealCount + 1,
+      usedReveal: true,
+      cleanSolveEligible: false,
+    );
+    state = AsyncData(completed);
+
+    if (s.sessionId != null) {
+      _persistCompletion(completed);
+    }
   }
 
   // ---------------------------------------------------------------------------
   // Autosave
   // ---------------------------------------------------------------------------
 
-  /// Schedules a debounced save ~500 ms after the last cell change.
   void _scheduleSave() {
     _saveDebounce?.cancel();
-    _saveDebounce =
-        Timer(const Duration(milliseconds: 500), _saveNow);
+    _saveDebounce = Timer(const Duration(milliseconds: 500), _saveNow);
   }
 
-  /// Immediately persists the current state to the DB.
   Future<void> _saveNow() async {
     final s = _s;
     if (s == null || s.sessionId == null) return;
@@ -180,6 +386,11 @@ class SolveNotifier extends _$SolveNotifier {
       elapsedMs: s.elapsedSeconds * 1000,
       status: s.status,
       isPaused: s.isPaused,
+      checkCount: s.checkCount,
+      revealCount: s.revealCount,
+      usedCheck: s.usedCheck,
+      usedReveal: s.usedReveal,
+      cleanSolveEligible: s.cleanSolveEligible,
     );
   }
 
@@ -244,7 +455,8 @@ class SolveNotifier extends _$SolveNotifier {
 
   void _checkCompletion() {
     final s = _s;
-    if (s == null) return;
+    if (s == null || _isTerminal(s.status)) return;
+
     for (var r = 0; r < s.puzzle.height; r++) {
       for (var c = 0; c < s.puzzle.width; c++) {
         final cell = s.puzzle.grid.cell(r, c);
@@ -256,25 +468,49 @@ class SolveNotifier extends _$SolveNotifier {
         }
       }
     }
+
     _timerSub?.cancel();
     _saveDebounce?.cancel();
 
-    final completed = s.copyWith(status: PuzzleStatus.solved);
+    final finalStatus =
+        (s.usedCheck || s.usedReveal) ? PuzzleStatus.solvedWithHelp : PuzzleStatus.solved;
+    final completed = s.copyWith(status: finalStatus);
     state = AsyncData(completed);
 
-    // Persist the completed state immediately
     if (s.sessionId != null) {
-      final repo = ref.read(solveRepositoryProvider);
-      repo.markComplete(
-        sessionId: s.sessionId!,
-        puzzleWidth: s.puzzle.width,
-        puzzleHeight: s.puzzle.height,
-        progress: completed.progress,
-        focus: completed.focus,
-        elapsedMs: completed.elapsedSeconds * 1000,
-        status: PuzzleStatus.solved,
-        completionType: CompletionType.clean,
-      );
+      _persistCompletion(completed);
     }
   }
+
+  void _persistCompletion(SolveState s) {
+    final repo = ref.read(solveRepositoryProvider);
+    repo.markComplete(
+      sessionId: s.sessionId!,
+      puzzleWidth: s.puzzle.width,
+      puzzleHeight: s.puzzle.height,
+      progress: s.progress,
+      focus: s.focus,
+      elapsedMs: s.elapsedSeconds * 1000,
+      status: s.status,
+      completionType: _deriveCompletionType(s),
+      checkCount: s.checkCount,
+      revealCount: s.revealCount,
+      usedCheck: s.usedCheck,
+      usedReveal: s.usedReveal,
+      cleanSolveEligible: s.cleanSolveEligible,
+    );
+  }
+
+  /// Derives [CompletionType] from the solve flags (topic-15).
+  CompletionType _deriveCompletionType(SolveState s) {
+    if (s.status == PuzzleStatus.revealed) return CompletionType.revealed;
+    if (s.usedReveal) return CompletionType.hinted;
+    if (s.usedCheck) return CompletionType.checked;
+    return CompletionType.clean;
+  }
+
+  bool _isTerminal(PuzzleStatus status) =>
+      status == PuzzleStatus.solved ||
+      status == PuzzleStatus.solvedWithHelp ||
+      status == PuzzleStatus.revealed;
 }
