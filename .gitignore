@@ -4,9 +4,14 @@
 .packages
 pubspec.lock
 build/
+.flutter-plugins-dependencies
 
 # macOS
 .DS_Store
+
+# Local agent/editor state
+.claude/settings.local.json
+*.save
 
 # IDE
 .idea/
@@ -20,4 +25,3 @@ node_modules/
 
 # Opencode config (IMPORTANT - contains API keys)
 opencode.json
-

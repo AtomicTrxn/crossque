@@ -186,7 +186,9 @@ class PuzFixtureBuilder {
     writeStr(title);
     writeStr(author);
     writeStr(copyright);
-    for (final t in clueTexts) writeStr(t);
+    for (final t in clueTexts) {
+      writeStr(t);
+    }
     writeStr(notes);
 
     // ── Extension blocks ─────────────────────────────────────────────────

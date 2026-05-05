@@ -162,6 +162,90 @@ Status key: ✅ Done · 🔄 In Progress · ⬜ Planned · ⏸ Deferred
 
 ---
 
+## Sprint 9 — Design Foundation ⬜
+
+**Goal:** Adopt the design handoff's token system and global Material styling without changing workflows.
+
+**Read before starting:** [docs/design-implementation-plan.md](docs/design-implementation-plan.md), [design/README.md](design/README.md), [design/design_tokens.dart](design/design_tokens.dart), [design/app_theme.dart](design/app_theme.dart), [design/crossword_theme.dart](design/crossword_theme.dart)
+
+| Task | Status | Notes |
+|------|--------|-------|
+| Commit `design/` handoff files | ⬜ | Source of truth for visual references during redesign |
+| Add `design_tokens.dart` under `lib/core/theme/` | ⬜ | Adapt to existing architecture rather than copy blindly |
+| Update `AppTheme` global styling | ⬜ | App bars, nav, buttons, chips, dividers, lists, typography |
+| Expand `CrosswordTheme` tokens | ⬜ | Grid, clue bar, clue panel, keyboard, check/reveal states |
+| Dynamic Color policy | ⬜ | App chrome may adapt; crossword grid/keyboard/state colors stay stable |
+| Light + dark mode verification | ⬜ | Required before moving to screen implementation |
+
+---
+
+## Sprint 10 — Solve Redesign ⬜
+
+**Goal:** Rebuild the solve experience to match the high-fidelity design references.
+
+**Read before starting:** [docs/design-implementation-plan.md](docs/design-implementation-plan.md), [design/Crosscue Design Review.html](design/Crosscue%20Design%20Review.html)
+
+| Task | Status | Notes |
+|------|--------|-------|
+| Compact 48dp solve app bar | ⬜ | Back, source/title, timer, overflow |
+| Add `ClueBar` above grid | ⬜ | Tappable across/down toggle |
+| Full-width grid layout | ⬜ | Cell size based on screen width / puzzle width |
+| Painter visual refresh | ⬜ | Borders, active cell, active word, cross highlight, check/reveal states |
+| Two-column clue panel | ⬜ | Across/down columns with active clue highlighting |
+| Custom QWERTY keyboard | ⬜ | Letter keys, delete, check-word key; preserve physical keyboard support |
+| 15x15 + mini layout QA | ⬜ | Verify light and dark mode |
+
+---
+
+## Sprint 11 — Home, Archive & Stats Redesign ⬜
+
+**Goal:** Bring the primary tabs into the flat, dense design language while keeping the app local/offline-first.
+
+**Read before starting:** [docs/design-implementation-plan.md](docs/design-implementation-plan.md), [design/Crosscue Design Review.html](design/Crosscue%20Design%20Review.html)
+
+| Task | Status | Notes |
+|------|--------|-------|
+| Home redesign for local puzzles | ⬜ | Use "Current puzzle" / "Continue" model instead of publisher "Today" feed |
+| Neutral sample/empty-state content | ⬜ | Do not use uncleared publisher names in production UI |
+| Archive row/filter/sort refresh | ⬜ | Flat rows, semantic status icons, chip styling |
+| Stats screen refresh | ⬜ | Flat sections, mono time values, no card-heavy layout |
+| Import/source placement review | ⬜ | Downloader/source management belongs in Settings, not Home |
+
+---
+
+## Sprint 12 — Settings, Import & Onboarding Redesign ⬜
+
+**Goal:** Align secondary flows with the redesign and make Settings the home for import/source management.
+
+**Read before starting:** [docs/design-implementation-plan.md](docs/design-implementation-plan.md), [ISSUES.md](ISSUES.md) #3, [research/topic-07-legal-tos-puzzle-sources.md](research/topic-07-legal-tos-puzzle-sources.md)
+
+| Task | Status | Notes |
+|------|--------|-------|
+| Settings visual refresh | ⬜ | Rows, toggles, segmented theme control, destructive actions |
+| Move import management into Settings | ⬜ | Keep local import discoverable without making downloader a Home affordance |
+| Add future source/downloader area | ⬜ | Disabled/absent until source is `openLicense` or `explicitPermission` |
+| Import screen restyle | ⬜ | Keep Android file picker constraints |
+| Onboarding restyle | ⬜ | Use token system and neutral/local examples |
+| Legal guardrail copy audit | ⬜ | No uncleared source names as built-in examples |
+
+---
+
+## Sprint 13 — Icon, Splash & Visual QA ⬜
+
+**Goal:** Ship the app icon/splash polish and verify the redesigned UI end to end.
+
+**Read before starting:** [docs/design-implementation-plan.md](docs/design-implementation-plan.md), [design/crosscue-icon.svg](design/crosscue-icon.svg), [design/Crosscue App Icon.html](design/Crosscue%20App%20Icon.html)
+
+| Task | Status | Notes |
+|------|--------|-------|
+| Generate Android launcher icons | ⬜ | Use `design/crosscue-icon.svg` as final source |
+| Update splash color/assets | ⬜ | Background `#0A2A6E` |
+| Visual QA screenshots | ⬜ | Home, Solve 15x15, Solve mini, Archive, Stats, Settings, Onboarding, Import, completion sheet |
+| Light/dark QA | ⬜ | Verify contrast and crossword readability |
+| Final verification | ⬜ | `flutter analyze`, `flutter test`, debug APK build |
+
+---
+
 ## Deferred / Post-MVP
 
 | Item | Notes |
@@ -171,4 +255,4 @@ Status key: ✅ Done · 🔄 In Progress · ⬜ Planned · ⏸ Deferred
 | Sync adapter (iCloud / Drive) | `SyncAdapter` interface + `NoOpSyncAdapter` stub in `core/sync/` |
 | Subscription / entitlement | `EntitlementService` interface + `FreeEntitlementService` stub in `core/entitlement/` |
 | iOS support | Phase 2; Android is Phase 1 target |
-| Automated puzzle downloaders | Only for `LicenseStatus.openLicense` or `explicitPermission` sources |
+| Automated puzzle downloaders | Only for `LicenseStatus.openLicense` or `explicitPermission` sources; management lives in Settings |

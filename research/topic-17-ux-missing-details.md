@@ -587,4 +587,4 @@ Rules:
 - [topic-13-screen-inventory-routes.md](topic-13-screen-inventory-routes.md)
 - [topic-15-streak-stats-algorithm.md](topic-15-streak-stats-algorithm.md)
 - [topic-16-first-run-phase1.md](topic-16-first-run-phase1.md)
-- [architecture-design-review.md](../architecture-design-review.md)
+- [architecture-design-review.md](../docs/archive/architecture-design-review.md)

@@ -420,4 +420,4 @@ Accessed 2026-05-01.
 - [kotwords Kotlin .puz parser](https://github.com/jpd236/kotwords) — reference implementation; do not copy (Apache 2.0 compatible for reading, but write Dart from spec)
 - [xword-dl Python parsers](https://github.com/thisisparker/xword-dl) — reference only
 - Internal: [topic-02-drift-database-schema.md](topic-02-drift-database-schema.md)
-- Internal: [architecture-design-review.md](../architecture-design-review.md)
+- Internal: [architecture-design-review.md](../docs/archive/architecture-design-review.md)
