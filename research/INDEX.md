@@ -4,7 +4,7 @@ All 18 topics are **Resolved** (research complete). Implementation status reflec
 
 Status key: ✅ Implemented · 🔄 Partially Implemented · ⬜ Pending · 🔒 Active Guardrail
 
-> ⚠️ **Legal Guardrail:** [topic-07](topic-07-legal-tos-puzzle-sources.md) classifies puzzle sources as `prohibited`, `needs_review`, `openLicense`, `explicitPermission`, or `userImport`. **Read topic-07 before writing any code that fetches, downloads, or automates access to puzzle content from external sources.** NYT, LA Times, and The Guardian are `prohibited`. This rule is permanent and applies to all sprints.
+> ⚠️ **Legal Guardrail:** [topic-07](topic-07-legal-tos-puzzle-sources.md) classifies puzzle sources as `prohibited`, `needs_review`, `openLicense`, `explicitPermission`, or `userImport`. **Read topic-07 before writing any code that fetches, downloads, or automates access to puzzle content from external sources.** Publisher-hosted sources such as Universal, LA Times, and The Guardian are currently `needs_review` unless written permission or an official licensed API is confirmed; NYT is `prohibited`. Scraping, caching, or bypassing publisher terms is forbidden for both `needs_review` and `prohibited` sources. This rule is permanent and applies to all sprints.
 
 ---
 

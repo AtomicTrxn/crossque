@@ -14,7 +14,7 @@ Which puzzle sources can the app safely build around without relying on prohibit
 
 ## Recommendation
 
-Treat publisher-hosted web puzzles as unsafe for automated fetching/caching unless the publisher provides an explicit API/license or written permission. For Phase 1, make local `.puz`/`.ipuz` import and explicitly licensed indie/static feeds the safe content foundation. Universal, LA Times, and Guardian should not be treated as launch sources until source-specific permission or a clearly licensed distribution channel is confirmed.
+Treat publisher-hosted web puzzles as unsafe for automated fetching/caching unless the publisher provides an explicit API/license or written permission. For Phase 1, make local `.puz`/`.ipuz` import and explicitly licensed indie/static feeds the safe content foundation. Universal, LA Times, and Guardian are `needs_review` and must not be treated as launch sources until source-specific permission or a clearly licensed distribution channel is confirmed. NYT is `prohibited` for app integration under the current Phase 1 policy.
 
 This is not legal advice. Before shipping any source downloader, get human legal/business review for that source's current terms, robots.txt, endpoint behavior, cache plan, and attribution.
 
@@ -31,15 +31,21 @@ The app should distinguish:
 
 ## Source Assessment
 
-| Source | Current Finding | Risk | Decision |
-|--------|-----------------|------|----------|
-| Local `.puz` / `.ipuz` import | User provides the file; app stores local copy and progress. Rights depend on user's source, but the app is not redistributing. | Low | Use in Phase 1. |
-| Indie/static puzzle feeds | Safe only when constructor/site grants explicit download/cache/display rights, ideally with license and attribution terms. | Low/medium | Good Phase 1 path if licenses are explicit. |
-| Universal Crossword / Andrews McMeel | Universal is a syndication product. AMU terms reserve rights, limit use to personal/noncommercial site viewing, and prohibit storing/copying/making site materials available without permission. | High | Do not scrape. Contact AMU for syndication/API/license. |
-| LA Times Crossword | LA Times games are free to play, but LA Times terms restrict content to personal/noncommercial online use and prohibit archiving, caching, scraping, copying, distributing, or incorporating content in a database without permission. | High | Do not scrape/cache. Seek permission/license before source integration. |
-| Guardian Crossword | Guardian site terms allow personal noncommercial use only and expressly prohibit scraping/crawling/extracting Guardian content without approval. Guardian Open Platform exists, but its terms/API scope must be confirmed for crosswords and registered-key use. | High | Do not scrape. Only consider an official API/license path after review. |
-| Wordplays or similar aggregators | No reliable permission source found, and aggregators generally cannot grant rights to underlying publisher puzzles unless explicitly licensed. | High | Do not use as a source of puzzle content. |
-| NYT | Subscription/premium source; `.puz` downloads discontinued. Third-party app access would require user credentials and terms review. | High | Post-MVP only, if ever. |
+`Registry status` is the app's `LicenseStatus` classification. `needs_review`
+means "track the candidate, but do not enable it"; it does not permit scraping,
+caching, or source integration. A source can move from `needs_review` to
+`explicit_permission` only after human legal/business review confirms written
+permission or an official licensed API path.
+
+| Source | Current Finding | Risk | Registry status | Decision |
+|--------|-----------------|------|-----------------|----------|
+| Local `.puz` / `.ipuz` import | User provides the file; app stores local copy and progress. Rights depend on user's source, but the app is not redistributing. | Low | `user_import` | Use in Phase 1. |
+| Indie/static puzzle feeds | Safe only when constructor/site grants explicit download/cache/display rights, ideally with license and attribution terms. | Low/medium | `open_license` or `explicit_permission` per feed | Good Phase 1 path if licenses are explicit. |
+| Universal Crossword / Andrews McMeel | Universal is a syndication product. AMU terms reserve rights, limit use to personal/noncommercial site viewing, and prohibit storing/copying/making site materials available without permission. | High | `needs_review` | Do not scrape. Contact AMU for syndication/API/license. |
+| LA Times Crossword | LA Times games are free to play, but LA Times terms restrict content to personal/noncommercial online use and prohibit archiving, caching, scraping, copying, distributing, or incorporating content in a database without permission. | High | `needs_review` | Do not scrape/cache. Seek permission/license before source integration. |
+| Guardian Crossword | Guardian site terms allow personal noncommercial use only and expressly prohibit scraping/crawling/extracting Guardian content without approval. Guardian Open Platform exists, but its terms/API scope must be confirmed for crosswords and registered-key use. | High | `needs_review` | Do not scrape. Only consider an official API/license path after review. |
+| Wordplays or similar aggregators | No reliable permission source found, and aggregators generally cannot grant rights to underlying publisher puzzles unless explicitly licensed. | High | `prohibited` | Do not use as a source of puzzle content. |
+| NYT | Subscription/premium source; `.puz` downloads discontinued. No public API is available, and third-party app access would require user credentials and terms review. | High | `prohibited` | Do not implement. |
 
 ## Publisher Notes
 
@@ -140,7 +146,7 @@ Every puzzle record should preserve and display:
 ## Implementation Checklist
 
 1. Add legal fields to the source registry model.
-2. Mark Universal, LA Times, Guardian, Wordplays/aggregators as `needs_review` or `prohibited` until permission exists.
+2. Mark Universal, LA Times, and Guardian as `needs_review` until permission exists; mark NYT and Wordplays/aggregators as `prohibited`.
 3. Implement local import and rights-cleared fixtures first.
 4. Create a source-review template covering terms URL, robots.txt, cache policy, attribution, commercial use, and contact.
 5. Require human review before enabling any network source.

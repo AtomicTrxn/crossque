@@ -91,7 +91,8 @@ manually finding and importing a file. Only sources with `LicenseStatus` of
 
 **Architecture notes:**
 - Implement each source as a `PuzzleSource` subclass (Sprint 8 abstraction).
-- Add a `DownloaderScreen` or `HomeScreen` "Browse sources" entry point.
+- Add source/downloader management under Settings. Do not make downloader
+  discovery a primary Home affordance while the app remains local/offline-first.
 - Fetched puzzles flow through the existing `ImportRepositoryImpl` pipeline (parse → duplicate check → persist) so the solve experience is identical to local imports.
 - Add a `fetchedAt` / `expiresAt` cache policy respected per source row.
 - Network calls: `dio` is already in the stack (see `pubspec-starter.yaml`).
@@ -103,7 +104,7 @@ manually finding and importing a file. Only sources with `LicenseStatus` of
 - `features/import/data/sources/guardian_source.dart`
 - `features/import/data/sources/amuselabs_source.dart`
 - `features/import/data/sources/indie_feed_source.dart`
-- `features/import/presentation/screens/browse_sources_screen.dart`
+- `features/settings/presentation/screens/source_management_screen.dart`
 
 ---
 

@@ -286,7 +286,7 @@ Avoid storing detailed guess history long-term unless undo persistence becomes a
 
 ## Sources
 
-- Internal architecture notes: [architecture-design-review.md](../architecture-design-review.md)
+- Internal architecture notes: [architecture-design-review.md](../docs/archive/architecture-design-review.md)
 - Design/UX feedback guidance: [topic-10-design-ux-research.md](topic-10-design-ux-research.md)
 - Canvas accessibility semantics: [topic-03-canvas-accessibility.md](topic-03-canvas-accessibility.md)
 - Persistence schema: [topic-02-drift-database-schema.md](topic-02-drift-database-schema.md)
