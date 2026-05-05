@@ -7,7 +7,7 @@ class SettingsScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Settings')),
-      body: const Center(child: Text('Settings — Sprint 5')),
+      body: const Center(child: Text('Settings — coming in Sprint 6')),
     );
   }
 }
