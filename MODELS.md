@@ -1,11 +1,13 @@
 # Domain Models Reference — Crosscue
 
-All models live under `crosscue/lib/features/solve/domain/models/` unless noted.
+Shared domain models live under `crosscue/lib/core/domain/models/`.
+Solve-only models (`CellProgress`, `FocusPosition`) live under
+`crosscue/lib/features/solve/domain/models/`.
 Generated files (`.freezed.dart`, `.g.dart`) are never edited by hand.
 
 ---
 
-## `Grid<T>` — `grid.dart`
+## `Grid<T>` — `core/domain/models/grid.dart`
 
 Plain Dart class (NOT Freezed — Freezed's codegen cannot handle generic type parameters).
 
@@ -28,7 +30,7 @@ Used as `Grid<SolutionCell>` (the answer grid) and `Grid<CellProgress>` (user pr
 
 ---
 
-## `SolutionCell` — `solution_cell.dart`
+## `SolutionCell` — `core/domain/models/solution_cell.dart`
 
 ```dart
 @freezed
@@ -49,7 +51,7 @@ abstract class SolutionCell with _$SolutionCell {
 
 ---
 
-## `CellProgress` — `cell_progress.dart`
+## `CellProgress` — `solve/domain/models/cell_progress.dart`
 
 ```dart
 @freezed
@@ -69,7 +71,7 @@ abstract class CellProgress with _$CellProgress {
 
 ---
 
-## `Clue` — `clue.dart`
+## `Clue` — `core/domain/models/clue.dart`
 
 ```dart
 @freezed
@@ -91,7 +93,7 @@ abstract class Clue with _$Clue {
 
 ---
 
-## `FocusPosition` — `focus_position.dart`
+## `FocusPosition` — `solve/domain/models/focus_position.dart`
 
 ```dart
 @freezed
@@ -127,6 +129,7 @@ abstract class PuzzleMetadata with _$PuzzleMetadata {
     DateTime? publishDate,        // original publication date (from .ipuz date field or .puz notes)
     String? notes,
     String? checksum,             // full SHA-256 hex string for duplicate detection
+    String? difficulty,           // e.g. 'Easy', 'Medium', 'Hard' — from .ipuz difficulty field
   }) = _PuzzleMetadata;
 }
 ```
@@ -136,7 +139,7 @@ abstract class PuzzleMetadata with _$PuzzleMetadata {
 
 ---
 
-## `Puzzle` — `puzzle.dart`
+## `Puzzle` — `core/domain/models/puzzle.dart`
 
 ```dart
 @freezed
@@ -199,13 +202,13 @@ class SolveState {
 
 ---
 
-## Enums — `enums.dart`
+## Enums — `core/domain/models/enums.dart`
 
 | Enum | Values | Used by |
 |------|--------|---------|
 | `Direction` | `across`, `down` | Clue, FocusPosition, SolveNotifier |
 | `CellState` | `empty`, `filled`, `checkedCorrect`, `checkedIncorrect`, `revealed` | CellProgress, painter |
-| `PuzzleStatus` | `unsolved`, `inProgress`, `solved`, `solvedWithHelp`, `revealed` | SolveState, SolveNotifier |
+| `PuzzleStatus` | `unsolved`, `inProgress`, `solved`, `solvedWithHelp`, `solvedWithReveal`, `revealed` | SolveState, SolveNotifier |
 | `PuzzleFormat` | `puz`, `ipuz`, `jpz` | PuzzleMetadata, parsers |
 | `EntryMode` | `normal`, `pencil`, `rebus` | Post-MVP |
 | `SourceType` | `free`, `subscription`, `local` | SourcesTable |
