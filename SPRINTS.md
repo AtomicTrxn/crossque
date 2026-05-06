@@ -262,6 +262,24 @@ Status key: ✅ Done · 🔄 In Progress · ⬜ Planned · ⏸ Deferred
 
 ---
 
+## Sprint 13.5 — Codebase Cleanup & Dark Mode Correctness ⬜
+
+**Goal:** Fix dark-mode colour hardcoding, eliminate duplicated utilities, tighten design tokens, patch the grid painter repaint scope, pre-add Sprint 14 packages, and update stale documentation — all before Sprint 13 visual QA so the dark-mode pass catches real issues rather than known ones.
+
+| Task | Status | Notes |
+|------|--------|-------|
+| **Dark mode — Archive** | ⬜ | Replace hardcoded `onSurface1Light`, `onSurface3Light`, `dividerLight`, `primaryMid`, `correctLight` in `archive_screen.dart` with `Theme.of(context)` / `colorScheme` lookups or `CrosscueColors` light/dark pairs; `_FilterChips` border and `_ArchiveRow` divider both hardcode light tokens |
+| **Dark mode — Home** | ⬜ | `home_screen.dart`: `_FeaturedPuzzle`, `_PuzzleRow`, `_SectionHeader`, `_ImportFAB` all hardcode `onSurface1Light` / `onSurface3Light` / `dividerLight` / `primary` directly; replace with theme-aware equivalents |
+| **Dark mode — Stats** | ⬜ | `stats_screen.dart`: every `_Cell`, `_SectionLabel`, `_PBRow`, `_CompletionSection` uses light-only tokens; wire through `colorScheme.onSurface` / `CrosscueColors.*Dark` via brightness check |
+| **Dark mode — Settings** | ⬜ | `_SectionHeader` hardcodes `CrosscueColors.onSurface3Light`; use `Theme.of(context).textTheme.labelSmall` colour (already theme-aware) and remove the manual override |
+| **Extract `_formatMs` utility** | ⬜ | Create `lib/core/utils/time_format.dart` with a single `formatMs(int ms)` function; remove the three identical copies in `archive_screen.dart`, `home_screen.dart`, `stats_screen.dart` |
+| **`CrosswordGridPainter.shouldRepaint` — add theme guard** | ⬜ | Current check misses theme changes (dark/light toggle won't repaint the grid); add `oldDelegate.theme != theme` to `shouldRepaint` in `crossword_grid_painter.dart` |
+| **Add Sprint 14 packages to `pubspec.yaml`** | ⬜ | Add `flutter_animate`, `share_plus`, `vibration` as declared dependencies now so Sprint 14 starts without a pub-get step; run `flutter pub get` and verify `flutter analyze` still clean |
+| **Update stale docs** | ⬜ | `docs/design-implementation-plan.md` status line still says "Sprints 10, 11, and 13 remain"; update to reflect Sprints 9–12 complete and 13–14 planned; no other content changes needed |
+| **Final verification** | ⬜ | `flutter analyze` 0 issues, `flutter test` 79/79, debug APK builds |
+
+---
+
 ## Sprint 14 — Animations, Haptics, Nav Icons & Settings Completion ⬜
 
 **Goal:** Implement all remaining design-spec items that were explicitly deferred during Sprints 10–12: full micro-animation suite, complete haptic spec, custom SVG nav bar icons, stats difficulty bars, missing Settings rows, and completion sheet polish.
