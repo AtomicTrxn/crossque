@@ -1,6 +1,6 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
 
-import 'enums.dart';
+import 'package:crosscue/core/domain/models/enums.dart';
 
 part 'focus_position.freezed.dart';
 

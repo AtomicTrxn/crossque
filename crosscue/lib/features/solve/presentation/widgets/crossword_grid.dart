@@ -3,8 +3,8 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:crosscue/core/theme/crossword_theme.dart';
-import 'package:crosscue/features/solve/domain/models/clue.dart';
-import 'package:crosscue/features/solve/domain/models/enums.dart';
+import 'package:crosscue/core/domain/models/clue.dart';
+import 'package:crosscue/core/domain/models/enums.dart';
 import 'package:crosscue/features/settings/presentation/providers/settings_providers.dart';
 import 'package:crosscue/features/solve/presentation/notifiers/solve_notifier.dart';
 import 'package:crosscue/features/solve/presentation/notifiers/solve_state.dart';

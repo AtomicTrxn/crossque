@@ -5,9 +5,9 @@ import 'package:drift/drift.dart';
 import 'package:crosscue/core/database/app_database.dart';
 import 'package:crosscue/core/database/tables/clues_table.dart';
 import 'package:crosscue/core/database/tables/puzzles_table.dart';
-import 'package:crosscue/features/solve/domain/models/clue.dart';
-import 'package:crosscue/features/solve/domain/models/enums.dart';
-import 'package:crosscue/features/solve/domain/models/puzzle.dart';
+import 'package:crosscue/core/domain/models/clue.dart';
+import 'package:crosscue/core/domain/models/enums.dart';
+import 'package:crosscue/core/domain/models/puzzle.dart';
 import 'package:crosscue/core/domain/models/puzzle_metadata.dart';
 import 'grid_serializer.dart';
 

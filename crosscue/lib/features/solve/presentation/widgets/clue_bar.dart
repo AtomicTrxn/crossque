@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 
 import 'package:crosscue/core/theme/crossword_theme.dart';
 import 'package:crosscue/core/theme/design_tokens.dart';
-import 'package:crosscue/features/solve/domain/models/clue.dart';
-import 'package:crosscue/features/solve/domain/models/enums.dart';
+import 'package:crosscue/core/domain/models/clue.dart';
+import 'package:crosscue/core/domain/models/enums.dart';
 import 'package:crosscue/features/solve/presentation/notifiers/solve_state.dart';
 
 /// Compact bar above the grid showing the active clue with direction prefix.

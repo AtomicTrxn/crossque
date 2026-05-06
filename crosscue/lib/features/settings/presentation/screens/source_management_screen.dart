@@ -6,7 +6,7 @@ import 'package:crosscue/core/routing/routes.dart';
 import 'package:crosscue/core/theme/design_tokens.dart';
 import 'package:crosscue/features/import/domain/repositories/puzzle_source.dart';
 import 'package:crosscue/features/import/presentation/providers/source_registry_provider.dart';
-import 'package:crosscue/features/solve/domain/models/enums.dart';
+import 'package:crosscue/core/domain/models/enums.dart';
 
 class SourceManagementScreen extends ConsumerWidget {
   const SourceManagementScreen({super.key});

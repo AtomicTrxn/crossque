@@ -4,8 +4,8 @@ import 'package:crosscue/core/database/app_database.dart';
 import 'package:crosscue/core/database/tables/cell_progress_table.dart';
 import 'package:crosscue/core/database/tables/solve_sessions_table.dart';
 import 'package:crosscue/features/solve/domain/models/cell_progress.dart';
-import 'package:crosscue/features/solve/domain/models/enums.dart';
-import 'package:crosscue/features/solve/domain/models/grid.dart';
+import 'package:crosscue/core/domain/models/enums.dart';
+import 'package:crosscue/core/domain/models/grid.dart';
 
 part 'solve_session_dao.g.dart';
 
