@@ -100,7 +100,6 @@ class SolveNotifier extends _$SolveNotifier {
   // ---------------------------------------------------------------------------
 
   /// Toggles the solve direction (across ↔ down) at the current focus cell.
-  /// Used by the ClueBar tap gesture (Sprint 10).
   void toggleDirection() {
     final s = _s;
     if (s == null) return;
@@ -133,6 +132,32 @@ class SolveNotifier extends _$SolveNotifier {
       state = AsyncData(
           s.copyWith(focus: FocusPosition(row: row, col: col, direction: dir)));
     }
+  }
+
+  /// Moves focus to a clue, preferring the first empty cell in that answer.
+  void focusClue(Clue clue) {
+    final s = _s;
+    if (s == null) return;
+
+    var targetRow = clue.startRow;
+    var targetCol = clue.startCol;
+    for (final (row, col) in _clueCells(clue)) {
+      if (s.progress.cell(row, col).letter.isEmpty) {
+        targetRow = row;
+        targetCol = col;
+        break;
+      }
+    }
+
+    state = AsyncData(
+      s.copyWith(
+        focus: FocusPosition(
+          row: targetRow,
+          col: targetCol,
+          direction: clue.direction,
+        ),
+      ),
+    );
   }
 
   // ---------------------------------------------------------------------------

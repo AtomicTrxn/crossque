@@ -2,7 +2,6 @@
 .build/
 .dart_tool/
 .packages
-pubspec.lock
 build/
 .flutter-plugins-dependencies
 
@@ -10,8 +9,16 @@ build/
 .DS_Store
 
 # Local agent/editor state
-.claude/settings.local.json
+.claude/
 *.save
+
+# Local secrets / signing material
+.env
+.env.*
+local.properties
+key.properties
+*.keystore
+*.jks
 
 # IDE
 .idea/
@@ -22,6 +29,16 @@ node_modules/
 
 # Logs
 *.log
+crash_log.txt
+
+# Local databases
+*.db
+*.db-shm
+*.db-wal
+*.sqlite
+*.sqlite3
+*.sqlite3-shm
+*.sqlite3-wal
 
 # Opencode config (IMPORTANT - contains API keys)
 opencode.json
