@@ -4,6 +4,8 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
 import '../../../../core/routing/routes.dart';
+import '../../../../core/theme/crossword_theme.dart';
+import '../../../../core/theme/design_tokens.dart';
 import '../../domain/models/archive_entry.dart';
 import '../providers/archive_providers.dart';
 
@@ -30,13 +32,11 @@ class _ArchiveScreenState extends ConsumerState<ArchiveScreen> {
   _SortOrder _sort = _SortOrder.importDate;
   _FilterMode _filter = _FilterMode.all;
 
-  // ---------------------------------------------------------------------------
-  // Build
-  // ---------------------------------------------------------------------------
-
   @override
   Widget build(BuildContext context) {
     final archiveAsync = ref.watch(archiveEntriesProvider);
+    final theme = CrosswordTheme.of(context);
+    final colorScheme = Theme.of(context).colorScheme;
 
     return Scaffold(
       appBar: AppBar(
@@ -58,7 +58,6 @@ class _ArchiveScreenState extends ConsumerState<ArchiveScreen> {
           final filtered = _applyFilter(entries, _filter);
           final sorted = _applySort(filtered, _sort);
           return Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               _FilterChips(
                 current: _filter,
@@ -68,7 +67,7 @@ class _ArchiveScreenState extends ConsumerState<ArchiveScreen> {
                 child: sorted.isEmpty
                     ? const _EmptyFilter()
                     : ListView.builder(
-                        padding: const EdgeInsets.symmetric(vertical: 8),
+                        padding: const EdgeInsets.symmetric(vertical: 4),
                         itemCount: sorted.length,
                         itemBuilder: (ctx, i) => _ArchiveTile(
                           entry: sorted[i],
@@ -82,10 +81,6 @@ class _ArchiveScreenState extends ConsumerState<ArchiveScreen> {
       ),
     );
   }
-
-  // ---------------------------------------------------------------------------
-  // Filter / sort
-  // ---------------------------------------------------------------------------
 
   static List<ArchiveEntry> _applyFilter(
       List<ArchiveEntry> entries, _FilterMode filter) {
@@ -118,10 +113,6 @@ class _ArchiveScreenState extends ConsumerState<ArchiveScreen> {
     return copy;
   }
 
-  // ---------------------------------------------------------------------------
-  // Delete
-  // ---------------------------------------------------------------------------
-
   Future<void> _confirmDelete(BuildContext context, ArchiveEntry entry) async {
     final confirmed = await showDialog<bool>(
       context: context,
@@ -138,8 +129,8 @@ class _ArchiveScreenState extends ConsumerState<ArchiveScreen> {
           ),
           FilledButton(
             style: FilledButton.styleFrom(
-              backgroundColor: Colors.red,
-              foregroundColor: Colors.white,
+              backgroundColor: colorScheme.error,
+              foregroundColor: colorScheme.onError,
             ),
             onPressed: () => Navigator.of(ctx).pop(true),
             child: const Text('Delete'),
@@ -168,23 +159,26 @@ class _SortMenuButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = CrosswordTheme.of(context);
+    final colorScheme = Theme.of(context).colorScheme;
+
     return PopupMenuButton<_SortOrder>(
       tooltip: 'Sort by',
-      icon: const Icon(Icons.sort),
+      icon: Icon(Icons.sort, color: colorScheme.onSurfaceVariant),
       initialValue: current,
       onSelected: onSelected,
-      itemBuilder: (_) => const [
+      itemBuilder: (_) => [
         PopupMenuItem(
           value: _SortOrder.importDate,
-          child: Text('Import date'),
+          child: Text('Import date', style: theme.textTheme.bodyMedium),
         ),
         PopupMenuItem(
           value: _SortOrder.puzzleDate,
-          child: Text('Puzzle date'),
+          child: Text('Puzzle date', style: theme.textTheme.bodyMedium),
         ),
         PopupMenuItem(
           value: _SortOrder.title,
-          child: Text('Title (A–Z)'),
+          child: Text('Title (A–Z)', style: theme.textTheme.bodyMedium),
         ),
       ],
     );
@@ -203,17 +197,21 @@ class _FilterChips extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+    final theme = CrosswordTheme.of(context);
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
       child: Row(
         children: _FilterMode.values
             .map((f) => Padding(
                   padding: const EdgeInsets.only(right: 8),
                   child: FilterChip(
-                    label: Text(_filterLabel(f)),
+                    label: Text(_filterLabel(f), style: theme.textTheme.bodySmall),
                     selected: current == f,
                     onSelected: (_) => onSelected(f),
+                    selectedColor: colorScheme.surfaceVariant,
+                    checkmarkColor: colorScheme.primary,
                   ),
                 ))
             .toList(),
@@ -241,34 +239,62 @@ class _ArchiveTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ListTile(
-      leading: _StatusIcon(entry: entry),
-      title: Text(
-        entry.title,
-        maxLines: 1,
-        overflow: TextOverflow.ellipsis,
-      ),
-      subtitle: Text(
-        _subtitle(context),
-        maxLines: 1,
-        overflow: TextOverflow.ellipsis,
-      ),
-      trailing: const Icon(Icons.chevron_right),
-      onTap: () =>
-          context.push(Routes.solveFor(Uri.encodeComponent(entry.puzzleId))),
+    final theme = CrosswordTheme.of(context);
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return InkWell(
+      borderRadius: BorderRadius.circular(CrosscueSpacing.buttonRadius),
+      onTap: () => context.push(Routes.solveFor(Uri.encodeComponent(entry.puzzleId))),
       onLongPress: onDelete,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        child: Row(
+          children: [
+            _StatusIcon(entry: entry),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    entry.title,
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      fontWeight: entry.isInProgress ? FontWeight.w600 : FontWeight.normal,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    _subtitle(entry),
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: colorScheme.onSurfaceVariant,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 8),
+            Icon(
+              Icons.chevron_right,
+              color: colorScheme.onSurfaceVariant,
+              size: 18,
+            ),
+          ],
+        ),
+      ),
     );
   }
 
-  String _subtitle(BuildContext context) {
+  String _subtitle(ArchiveEntry entry) {
     final parts = <String>[];
 
-    // Source / dimensions
     final dateStr = _puzzleDateLabel(entry);
     if (dateStr != null) parts.add(dateStr);
     parts.add(entry.sizeLabel);
 
-    // Status
     if (entry.isNotStarted) {
       parts.add('Not started');
     } else if (entry.isInProgress) {
@@ -286,12 +312,12 @@ class _ArchiveTile extends StatelessWidget {
 
   static String? _puzzleDateLabel(ArchiveEntry entry) {
     final date = entry.publishDate ?? entry.importedAt;
-    return DateFormat('EEE d MMM yyyy').format(date.toLocal());
+    return DateFormat('MMM d').format(date.toLocal());
   }
 }
 
 // ---------------------------------------------------------------------------
-// Status icon
+// Status icon (semantic)
 // ---------------------------------------------------------------------------
 
 class _StatusIcon extends StatelessWidget {
@@ -301,25 +327,28 @@ class _StatusIcon extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = Theme.of(context).colorScheme;
+    final theme = CrosswordTheme.of(context);
+    final colorScheme = Theme.of(context).colorScheme;
 
-    if (entry.isCleanSolve) {
-      // ★ Personal-best eligible clean solve
-      return Icon(Icons.star_rounded, color: color.primary, size: 28);
-    }
-    if (entry.isCompleted || entry.isRevealed) {
-      // ✓ Completed (with help or revealed)
-      return Icon(Icons.check_circle_outline_rounded,
-          color: color.primary, size: 28);
-    }
-    if (entry.isInProgress) {
-      // ◑ In progress
-      return Icon(Icons.timelapse_rounded,
-          color: color.secondary, size: 28);
-    }
-    // ○ Not started
-    return Icon(Icons.radio_button_unchecked_rounded,
-        color: color.onSurfaceVariant, size: 28);
+    return Icon(
+      _getStatusIconData(entry),
+      size: 24,
+      color: _getStatusColor(entry),
+    );
+  }
+
+  IconData _getStatusIconData(ArchiveEntry entry) {
+    if (entry.isCleanSolve) return Icons.star_rounded;
+    if (entry.isCompleted || entry.isRevealed) return Icons.check_circle_rounded;
+    if (entry.isInProgress) return Icons.timelapse_rounded;
+    return Icons.radio_button_unchecked_rounded;
+  }
+
+  Color _getStatusColor(ArchiveEntry entry) {
+    if (entry.isCleanSolve) return colorScheme.primary;
+    if (entry.isCompleted || entry.isRevealed) return colorScheme.primary;
+    if (entry.isInProgress) return colorScheme.secondary;
+    return colorScheme.onSurfaceVariant;
   }
 }
 
@@ -332,22 +361,32 @@ class _EmptyArchive extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Center(
+    final theme = CrosswordTheme.of(context);
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return Padding(
+      padding: const EdgeInsets.all(CrosscueSpacing.screenH),
       child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.inbox_outlined,
-              size: 64,
-              color: Theme.of(context).colorScheme.onSurfaceVariant),
-          const SizedBox(height: 16),
-          Text('No puzzles yet',
-              style: Theme.of(context).textTheme.titleMedium),
+          Icon(
+            Icons.inbox_outlined,
+            size: 48,
+            color: colorScheme.onSurfaceVariant,
+          ),
           const SizedBox(height: 8),
           Text(
+            'No puzzles yet',
+            style: theme.textTheme.titleMedium?.copyWith(
+              height: 1.25,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
             'Import a puzzle to get started.',
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
-                ),
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: colorScheme.onSurfaceVariant,
+              height: 1.3,
+            ),
           ),
         ],
       ),
@@ -360,12 +399,18 @@ class _EmptyFilter extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Center(
+    final theme = CrosswordTheme.of(context);
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return Padding(
+      padding: const EdgeInsets.all(CrosscueSpacing.screenH),
       child: Text(
         'No puzzles match this filter.',
-        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              color: Theme.of(context).colorScheme.onSurfaceVariant,
-            ),
+        style: theme.textTheme.bodyMedium?.copyWith(
+          color: colorScheme.onSurfaceVariant,
+          height: 1.4,
+        ),
+        textAlign: TextAlign.center,
       ),
     );
   }
@@ -375,7 +420,6 @@ class _EmptyFilter extends StatelessWidget {
 // Helpers
 // ---------------------------------------------------------------------------
 
-/// Formats [ms] as m:ss (or h:mm:ss if ≥ 1 hour).
 String _formatMs(int ms) {
   final total = ms ~/ 1000;
   final h = total ~/ 3600;
