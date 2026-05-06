@@ -1,4 +1,4 @@
-import 'package:crosscue/features/solve/domain/models/enums.dart';
+import 'package:crosscue/core/domain/models/enums.dart';
 import 'package:crosscue/features/import/domain/repositories/puzzle_source.dart';
 
 /// The built-in source representing user-supplied local files (.puz / .ipuz).

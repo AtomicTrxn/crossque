@@ -14,7 +14,7 @@ import 'package:crosscue/core/theme/design_tokens.dart';
 import 'package:crosscue/core/utils/time_format.dart';
 import 'package:crosscue/features/settings/presentation/providers/settings_providers.dart';
 import 'package:crosscue/features/stats/presentation/providers/stats_providers.dart';
-import 'package:crosscue/features/solve/domain/models/enums.dart';
+import 'package:crosscue/core/domain/models/enums.dart';
 import 'package:crosscue/features/solve/presentation/notifiers/solve_notifier.dart';
 import 'package:crosscue/features/solve/presentation/notifiers/solve_state.dart';
 import 'package:crosscue/features/solve/presentation/widgets/clue_bar.dart';

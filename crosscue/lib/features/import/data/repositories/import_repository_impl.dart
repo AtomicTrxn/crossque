@@ -1,7 +1,7 @@
 import 'dart:typed_data';
 
 import 'package:crosscue/core/domain/models/puzzle_metadata.dart';
-import 'package:crosscue/features/solve/domain/models/puzzle.dart';
+import 'package:crosscue/core/domain/models/puzzle.dart';
 import 'package:crosscue/features/import/domain/models/parse_error.dart';
 import 'package:crosscue/features/import/domain/repositories/import_repository.dart';
 import 'package:crosscue/features/import/domain/repositories/puzzle_parser.dart';

@@ -1,10 +1,10 @@
 import 'package:intl/intl.dart';
 
 import 'package:crosscue/features/solve/domain/models/cell_progress.dart';
-import 'package:crosscue/features/solve/domain/models/enums.dart';
+import 'package:crosscue/core/domain/models/enums.dart';
 import 'package:crosscue/features/solve/domain/models/focus_position.dart';
-import 'package:crosscue/features/solve/domain/models/grid.dart';
-import 'package:crosscue/features/solve/domain/models/puzzle.dart';
+import 'package:crosscue/core/domain/models/grid.dart';
+import 'package:crosscue/core/domain/models/puzzle.dart';
 import 'package:crosscue/features/solve/domain/repositories/solve_repository.dart';
 import 'package:crosscue/features/solve/data/daos/solve_session_dao.dart';
 

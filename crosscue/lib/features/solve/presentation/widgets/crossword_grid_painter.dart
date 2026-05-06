@@ -5,9 +5,9 @@ import 'package:flutter/material.dart';
 import 'package:crosscue/core/theme/crossword_theme.dart';
 import 'package:crosscue/core/theme/design_tokens.dart';
 import 'package:crosscue/features/solve/domain/models/cell_progress.dart';
-import 'package:crosscue/features/solve/domain/models/enums.dart';
-import 'package:crosscue/features/solve/domain/models/grid.dart';
-import 'package:crosscue/features/solve/domain/models/puzzle.dart';
+import 'package:crosscue/core/domain/models/enums.dart';
+import 'package:crosscue/core/domain/models/grid.dart';
+import 'package:crosscue/core/domain/models/puzzle.dart';
 import 'package:crosscue/features/solve/presentation/notifiers/solve_state.dart';
 
 /// Paints the crossword grid using direct canvas calls.

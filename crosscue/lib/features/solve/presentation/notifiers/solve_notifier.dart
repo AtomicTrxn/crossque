@@ -7,10 +7,10 @@ import 'package:crosscue/features/settings/presentation/providers/settings_provi
 import 'package:crosscue/features/solve/presentation/providers/solve_providers.dart';
 import 'package:crosscue/features/stats/presentation/providers/stats_providers.dart';
 import 'package:crosscue/features/solve/domain/models/cell_progress.dart';
-import 'package:crosscue/features/solve/domain/models/clue.dart';
-import 'package:crosscue/features/solve/domain/models/enums.dart';
+import 'package:crosscue/core/domain/models/clue.dart';
+import 'package:crosscue/core/domain/models/enums.dart';
 import 'package:crosscue/features/solve/domain/models/focus_position.dart';
-import 'package:crosscue/features/solve/domain/models/grid.dart';
+import 'package:crosscue/core/domain/models/grid.dart';
 import 'solve_state.dart';
 
 part 'solve_notifier.g.dart';

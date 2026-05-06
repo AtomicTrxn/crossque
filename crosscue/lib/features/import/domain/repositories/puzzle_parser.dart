@@ -1,7 +1,7 @@
 import 'dart:typed_data';
 
 import 'package:crosscue/core/utils/result.dart';
-import 'package:crosscue/features/solve/domain/models/puzzle.dart';
+import 'package:crosscue/core/domain/models/puzzle.dart';
 import 'package:crosscue/features/import/domain/models/parse_error.dart';
 
 /// Interface implemented by each puzzle-format parser.
