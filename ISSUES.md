@@ -13,12 +13,20 @@ Status key: 🐛 Bug · ✨ Enhancement · 💡 Idea · ✅ Done · ❌ Won't Fi
 | # | Type | Title | Sprint Target | Notes |
 |---|------|-------|---------------|-------|
 | 3 | ✨ | In-app puzzle downloader for free/licensed sources | Sprint 8+ | See detail below; legal review required before any source ships |
-| 7 | ✨ | Completed words/letters: soft green fill color | Next | Apply a muted green (`#C8E6C9` bg / `#2E7D32` text) to fully correct words; distinct from the check-correct state |
-| 9 | ✨ | About screen: icon + description + GitHub link | Next | Currently a stub. Add app icon, 2-line tagline, version string, and a tappable GitHub URL. See detail. |
-| 10 | 🐛 | Export and import data not implemented or wired up | Next | JSON export of completed session records; additive import. See detail. |
-| 12 | 🐛 | Crash reporting saves nothing — wire up local log | Next | `CrashReporter` is a no-op stub. Phase 1 target: capture crash/error details to a local file in `getApplicationDocumentsDirectory()`. No transmission yet. See detail. |
-| 13 | 🐛 | Colorblind mode (Deuteranopia) not implemented | Next | Dot in upper-right corner of cell = correct letter. Extensible for future types. Settings note explaining the dot. See detail. |
-| 14 | 🐛 | Sounds not implemented; merge with haptics into "Touch & Sound" section | Next | `audioplayers` package; programmatically generated soft beep; mirrors haptics trigger points. See detail. |
+| 21 | ✨ | Sources: row-tap opens centered modal, condense wording, remove trailing button | Next | Entire `ListTile` row is tappable; detail sheet is a centered `AlertDialog` not a bottom sheet; wording tightened to avoid scrolling |
+| 22 | ✨ | Replace "Future Downloads" with "Community Crosswords" + Crosshare source | Next | Remove the placeholder section; add Crosshare (`openLicense`) as the first free community source. See detail. |
+| 23 | ✨ | Clue panel: scrollable numbered list, full-width dynamic keyboard, haptic scroll | Next | Both across/down lists scroll independently in number order; keyboard fills full width dynamically; panel extends to top of keyboard; haptic tick on scroll; cross-side updates only on release. See detail. |
+| 24 | ✨ | Puzzle reset dialog: cancel button blue | Next | Keep reset button red; make cancel button filled `#1565C0` blue — matches other dialog cancel patterns (#11, #15) |
+| 25 | ✨ | App icon: larger logo with thin margin inside circle | Next | Regenerate icon assets with logo scaled up so only a thin padding remains between logo edge and circle boundary |
+| 26 | ✨ | Stats page: add "Streak" section title above current/longest | Next | Small `12px #999` uppercase label "STREAK" above the current streak / longest streak stat cells, matching section-header style elsewhere |
+| 27 | 🐛 | Onboarding end: navigate to import screen, not today | Next | Final onboarding step CTA should `context.go(Routes.import_)` with back returning to today (`Routes.home`), not go directly to home |
+| 28 | ✨ | About: use centered dialog, match app icon exactly | Next | Replace bottom sheet with `showDialog` centered modal; icon widget must use the same asset as the launcher icon, not a placeholder |
+| 29 | ✨ | Archive page: remove floating add (+) button | Next | The FAB on the archive screen is redundant — import is accessible from Today. Remove it. |
+| 30 | ✨ | Today page add button: context-aware routing + blue color | Next | If no free source enabled → `Routes.import_`; if free source enabled → free source downloader (TBD). Button color: `#1565C0` (selected-tab blue). See detail. |
+| 31 | 🐛 | Cross-direction column highlight too prominent | Next | When a cell is focused, the perpendicular word's light-blue highlight makes letters hard to read. Remove the cross-word highlight entirely or reduce to a 1dp border tint. See detail. |
+| 32 | ✨ | "Crosscue" home header: centered, overlay banner, cold-start only | Next | Header renders as an overlay on top of content (no layout shift); slides up and stays hidden after first appearance each cold start; centered text. See detail. |
+| 33 | ✨ | Android lifecycle: audit all app states | Next | Verify correct behaviour for all Android lifecycle states. See detail. |
+| 34 | ✨ | Today page: pie chart completion indicator next to puzzle size | Next | Small circular progress pie (`~18dp`) inline after size label e.g. "15×15 ◕"; fill proportion = cells filled / total white cells; style matches navy palette. See detail. |
 
 ## Done
 
@@ -32,10 +40,161 @@ Status key: 🐛 Bug · ✨ Enhancement · 💡 Idea · ✅ Done · ❌ Won't Fi
 | 16 | 🐛 | Revealing entire puzzle does not mark puzzle as complete | 2026-05-06 | Verified reveal completion path and tightened terminal-state UI handling |
 | 17 | ✨ | Clue panel: auto-center active clue and tappable rows | 2026-05-06 | Rows are tappable and focus the first empty cell in the selected clue |
 | 18 | ✨ | Clue panel: larger font, show only 5 clues | 2026-05-06 | Clue text is 14px and panel height is capped to five visible rows |
+| 7 | ✨ | Completed words/letters: soft green fill color | 2026-05-06 | Fully correct words now use muted green fill/text when not focused/highlighted |
+| 9 | ✨ | About screen: icon, description, GitHub link | 2026-05-06 | Replaced stub with an About bottom sheet and copyable GitHub URL |
+| 12 | 🐛 | Crash reporting saves nothing — wire up local log | 2026-05-06 | Added local rolling crash log at app documents `crash_log.txt`; no transmission |
+| 13 | 🐛 | Colorblind mode (Deuteranopia) not implemented | 2026-05-06 | Added enum-backed setting and navy dot indicator for correct letters |
+| 19 | ✨ | Clue pane: sticky headings, 3-row wraparound viewport | 2026-05-06 | Across/Down headings are fixed; each column shows previous/selected/next with wraparound |
+| 20 | ✨ | Keyboard: increase key size again | 2026-05-06 | Keys are taller/larger with responsive widths for narrow screens |
+| 10 | 🐛 | Export and import data not implemented or wired up | 2026-05-06 | Added JSON stats export/share and additive import into backup-only stats rows |
+| 14 | 🐛 | Sounds not implemented; merge with haptics into "Touch & Sound" section | 2026-05-06 | Added `audioplayers` beep generation and wired sounds to key/check/completion events |
 
 ---
 
 ## Detail
+
+### #21 — Sources: row-tap opens centered modal, condense wording
+
+**Type:** Enhancement
+**Reported:** 2026-05-06
+
+Wrap each source `ListTile` in a `GestureDetector` / `InkWell` (remove the trailing `IconButton`). On tap, show a centered `AlertDialog` (not `showModalBottomSheet`) containing the source name, license status, and a brief one-line description. Keep all text under ~120 chars to avoid scrolling on a 360dp-wide dialog. The dialog's positive action is "Enable" / "Disable" and negative is "Cancel".
+
+**Key file:** `source_management_screen.dart`
+
+---
+
+### #22 — Replace "Future Downloads" with "Community Crosswords" + Crosshare
+
+**Type:** Enhancement
+**Reported:** 2026-05-06
+
+Remove the "Future Downloads" placeholder section from the Settings → Sources screen. Replace with a "Community Crosswords" section containing a single pre-registered source:
+
+- **Crosshare** — `https://crosshare.org` — `LicenseStatus.openLicense`
+  - API: `https://crosshare.org/api/dailymini` returns a public daily mini puzzle in a documented JSON format
+  - Register in `SourceRegistry` as `CrosshareSource` implementing `PuzzleSource`
+  - Display name: "Crosshare Daily Mini"
+  - Attribution required: true (link to crosshare.org in puzzle detail)
+  - GitHub reference: `https://github.com/crosshare-org/crosshare`
+
+Wire the downloader into the existing import pipeline once the source is registered. The actual HTTP fetch lives in a new `CrosshareSource` data class under `features/import/data/sources/`.
+
+**Key files:** `source_registry.dart`, `features/import/data/sources/crosshare_source.dart` (new), `source_management_screen.dart`
+
+---
+
+### #23 — Clue panel: scrollable numbered list, dynamic keyboard, haptic scroll
+
+**Type:** Enhancement
+**Reported:** 2026-05-06
+
+Three tightly coupled changes:
+
+1. **Scrollable clue lists in number order** — Both the Across and Down columns scroll independently. Clues are sorted by number ascending (already the case in `Puzzle.clues`). Use a `ListView` with a `ScrollController` per column.
+
+2. **Dynamic keyboard width** — `CrosswordKeyboard` should use `LayoutBuilder` so letter keys fill the full available width with no fixed `maxWidth` cap. Keys grow as wide as the screen allows while maintaining proportional spacing.
+
+3. **Panel extends to keyboard top** — Remove any fixed height on the clue panel. It should be `Expanded` and fill all space between the grid bottom and the keyboard top.
+
+4. **Haptic feedback on scroll** — As the user drags the clue list, fire `HapticFeedback.selectionClick()` each time the highlighted item changes (one tick per clue boundary crossed). Gate on the haptics setting.
+
+5. **Cross-side deferred update** — While the user is actively scrolling the Across list, the Down list does not follow until the user lifts their finger and a clue is committed. Then the Down `ScrollController` animates to the matching cross-clue. This prevents jitter. Implement via the `ScrollController.addListener` + a debounce on `onScrollEnd` (`NotificationListener<ScrollEndNotification>`).
+
+**Key files:** `clue_panel.dart`, `crossword_keyboard.dart`, `solve_screen.dart`
+
+---
+
+### #30 — Today page add button: context-aware routing + blue color
+
+**Type:** Enhancement
+**Reported:** 2026-05-06
+
+The floating action button (or equivalent) on the Today/Home screen should:
+- Check `SourceRegistry.enabledSources` — if any source has a downloader (Phase 2), route to the community downloader screen; otherwise route to `Routes.import_` (local file pick)
+- Color: `#1565C0` (the same blue used for the selected bottom-nav tab indicator)
+- For now (no downloader implemented), always route to `Routes.import_`; the condition is wired but the downloader branch is a no-op stub
+
+**Key file:** `home_screen.dart`, `app_router.dart` (if a new route is needed)
+
+---
+
+### #31 — Cross-direction column highlight too prominent
+
+**Type:** Bug / UX
+**Reported:** 2026-05-06
+
+When a cell is focused, `CrosswordGridPainter` paints the perpendicular word's cells in a light-blue wash (`#E3F2FD`). At normal cell sizes this makes the letter glyphs hard to read against the tinted background.
+
+**Fix options (pick one):**
+- **Remove the cross highlight entirely** — the active word (blue) and focused cell (gold) give enough orientation
+- **Thin border only** — paint a 1dp `#BBDEFB` border on cross-word cells instead of flooding the cell background
+
+Preferred: remove entirely. If user testing shows loss of orientation, fall back to thin border. Update `CrosswordGridPainter._paintCellBackground`.
+
+**Key file:** `crossword_grid_painter.dart`
+
+---
+
+### #32 — "Crosscue" home header: centered overlay banner, cold-start only
+
+**Type:** Enhancement
+**Reported:** 2026-05-06
+
+The "Crosscue" title currently renders as a standard `AppBar` title, causing layout shift when it appears/disappears. Replace with:
+
+- A `Stack` overlay at the top of `HomeScreen` — the banner sits above the content, not inside the layout flow
+- The banner slides down from off-screen on cold start, displays for ~2 seconds, then slides back up with a `SlideTransition`
+- After dismissal it is removed from the tree (`setState(() => _bannerVisible = false)`) so it takes no space
+- "Cold start only" = show once per process lifetime. Use a static `bool _hasShown = false` in `HomeScreen` state or a `ref.read` of a simple `keepAlive` boolean provider — no persistence needed (next app launch is a new process)
+- Text: centered, `24px w700`, navy `#0A2A6E`
+
+**Key file:** `home_screen.dart`
+
+---
+
+### #33 — Android lifecycle: audit all app states
+
+**Type:** Enhancement / Audit
+**Reported:** 2026-05-06
+
+Verify the app responds correctly to every Android lifecycle transition:
+
+| State | Android event | Expected app behaviour |
+|-------|--------------|----------------------|
+| **Foreground → Background** | `AppLifecycleState.paused` | Pause solve timer; autosave progress |
+| **Background → Foreground** | `AppLifecycleState.resumed` | Resume timer only if puzzle was running (not paused by user); refresh home puzzle list if stale |
+| **Background → System kill** | Process death | Progress already autosaved; no action needed at kill time |
+| **Hidden (pip / split)** | `AppLifecycleState.hidden` | Same as paused — already handled; verify |
+| **Inactive (phone call overlay)** | `AppLifecycleState.inactive` | Do nothing (brief interruption; timer keeps running) |
+| **Detached** | `AppLifecycleState.detached` | Flush any pending DB writes |
+
+Check `SolveScreen.didChangeAppLifecycleState` — currently handles `paused` and `hidden`. Confirm `detached` triggers a final `saveProgress` call. Confirm `resumed` does not restart a user-paused puzzle. Add widget test or manual QA checklist to DEPLOYMENT.md.
+
+**Key files:** `solve_screen.dart`, `solve_notifier.dart`, `DEPLOYMENT.md`
+
+---
+
+### #34 — Today page: pie chart completion indicator next to puzzle size
+
+**Type:** Enhancement
+**Reported:** 2026-05-06
+
+Inline a small circular progress indicator after the size label in the featured puzzle card and list rows on the Today/Home screen:
+
+- Size: `18dp` diameter
+- Proportion: `filledCells / totalWhiteCells` from the puzzle's latest session (0.0 if not started)
+- Colors: filled arc = `#1565C0` navy, track = `#E0E0E0` grey
+- Not started: empty circle (track only)
+- Complete: solid navy circle
+- Use a `CustomPainter` arc or Flutter's `CircularProgressIndicator` with `strokeWidth: 2.5` and `backgroundColor`
+- Positioned inline: `"15×15  [pie]"` with `4dp` gap between text and chart
+
+The `ArchiveRepositoryImpl.getArchiveEntries()` already loads session data alongside metadata — use `latestSession` to derive fill fraction without a new query.
+
+**Key files:** `home_screen.dart`, optionally a new `_PieProgress` widget in `home/presentation/widgets/`
+
+---
 
 ### #2 — Long-press grid cell → contextual Check/Reveal menu
 
@@ -274,6 +433,14 @@ Add an in-app downloader so users can fetch today's puzzle directly without
 manually finding and importing a file. Only sources with `LicenseStatus` of
 `openLicense` or `explicitPermission` may be enabled (topic-07 hard rule).
 
+**Prep shipped 2026-05-06:**  
+`PuzzleSource` now carries license URL, permission contact, cache policy,
+raw-payload retention, commercial-use, last-review, and review-note metadata.
+Settings → Puzzle sources exposes those fields and includes a source review
+checklist. A reusable review template lives at
+`docs/source-legal-review-template.md`. This issue remains open because no
+online source has been rights-cleared for downloader implementation.
+
 > ⚠️ **Legal guardrail:** Read [topic-07](research/topic-07-legal-tos-puzzle-sources.md)
 > in full before writing any downloader code. Universal, LA Times, and The Guardian
 > are currently classified `needsReview` — they **must not** be enabled until
@@ -291,7 +458,7 @@ manually finding and importing a file. Only sources with `LicenseStatus` of
 
 **Recommended implementation order:**
 1. Finish Sprint 8 `SourceRegistry` + `LicenseStatus` enforcement first — this is the gate.
-2. Research indie constructor feeds (e.g. Matt Gaffney's daily mini, Brendan Emmett Quigley) that publish permissive-licensed `.puz` files — these are `openLicense` and can ship without further legal review.
+2. Research indie constructor feeds (e.g. Matt Gaffney's daily mini, Brendan Emmett Quigley) that publish permissive-licensed `.puz` files — these may become `openLicense` only after source-specific review confirms the license, attribution, and cache policy.
 3. Contact Andrews McMeel about Universal Crossword API/syndication agreement.
 4. Contact Guardian Open Platform (`open.platform@guardian.co.uk`) to confirm crossword availability and terms.
 5. Approach LA Times / Tribune via official AmuseLabs API channel.
