@@ -58,7 +58,7 @@ All commands must be run from the **project root**: `/Users/tomhess/Claude/Cross
 adb -s emulator-5554 install -r build/app/outputs/flutter-apk/app-debug.apk
 ```
 
-When adding packages, reference **`pubspec-starter.yaml`** in the repo root — it lists all Phase 1 packages with pinned versions and Phase 2 packages commented out.
+When adding packages, reference **`crosscue/pubspec.yaml`** — it lists all Phase 1 packages with their locked versions, and Phase 2 packages are commented out inline.
 
 ---
 

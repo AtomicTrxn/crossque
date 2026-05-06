@@ -11,7 +11,8 @@ lib/
 ├── app.dart                         # MaterialApp + router wiring
 ├── core/
 │   ├── database/                    # Drift DB definition + all tables
-│   ├── domain/models/               # Cross-feature domain models
+│   ├── domain/models/               # ALL shared domain models: Puzzle, Clue, Grid, SolutionCell,
+│   │                                #   enums, PuzzleMetadata (solve-only models stay in features/solve)
 │   ├── providers/                   # App-wide Riverpod providers
 │   ├── routing/                     # go_router config + route constants
 │   ├── theme/                       # Material 3 theme + CrosswordTheme extension
@@ -109,19 +110,15 @@ ImportScreen
 
 ## Feature: `solve`
 
-Owns solve-specific models and the interactive grid. Shared puzzle metadata lives in `core/domain/models`.
+Owns solve-specific models and the interactive grid. Shared puzzle models and enums
+live in `core/domain/models/` (see Core: Domain Models below).
 
 ```
 solve/
 ├── domain/
 │   ├── models/
-│       ├── enums.dart            # Direction, CellState, PuzzleStatus, PuzzleFormat, LicenseStatus, etc.
-│       ├── grid.dart             # Grid<T> — plain Dart class (NOT Freezed — generics)
-│       ├── solution_cell.dart    # @freezed abstract class — one cell in the solution
-│       ├── cell_progress.dart    # @freezed abstract class — one cell of user progress
-│       ├── clue.dart             # @freezed abstract class
-│       ├── focus_position.dart   # @freezed abstract class
-│       └── puzzle.dart           # @freezed abstract class — full puzzle (metadata + grid + clues)
+│       ├── cell_progress.dart    # @freezed abstract class — one cell of user progress (solve-only)
+│       └── focus_position.dart   # @freezed abstract class — cursor row/col/direction (solve-only)
 │   └── repositories/solve_repository.dart # Abstract solve contract
 ├── data/
 │   ├── daos/solve_session_dao.dart          # Autosave, resume, getLatestSession()
@@ -201,6 +198,26 @@ typedef CompletedSessionStat = ({
 
 ---
 
+## Core: Domain Models
+
+Shared models consumed by more than one feature. Solve-only models (`CellProgress`,
+`FocusPosition`) remain in `features/solve/domain/models/`.
+
+```
+core/domain/models/
+├── enums.dart             # Direction, CellState, PuzzleStatus, EntryMode,
+│                          #   PuzzleFormat, SourceType, LicenseStatus, CompletionType
+├── grid.dart              # Grid<T> — plain Dart class (NOT Freezed — generics)
+├── solution_cell.dart     # @freezed abstract class — one cell in the solution grid
+├── clue.dart              # @freezed abstract class — number, direction, text, position
+├── puzzle.dart            # @freezed abstract class — metadata + Grid<SolutionCell> + clues
+└── puzzle_metadata.dart   # @freezed abstract class — id, title, author, format, size, difficulty
+```
+
+Consumers outside `solve/`: import parsers, archive, stats, core database, settings.
+
+---
+
 ## Core: Database
 
 ```
@@ -265,6 +282,8 @@ core/providers/core_providers.dart
   crashReporterProvider      — @Riverpod(keepAlive: true) NoOpCrashReporter (Phase 1)
 
 features/settings/presentation/providers/settings_providers.dart
+  appSettingsProvider        — @Riverpod(keepAlive: true) AppSettingsRepository
+                               (returns AppSettingsRepositoryImpl; interface in domain/, impl in data/)
   hasSeenOnboardingProvider  — @riverpod Future<bool>
   themeModeProvider          — @riverpod class ThemeModeNotifier
   hapticsEnabledProvider     — @riverpod class HapticsEnabledNotifier
@@ -290,7 +309,10 @@ stats/.../stats_providers.dart
 
 ## Adding a New Feature — Checklist
 
-1. **Domain model** (`features/<name>/domain/models/<model>.dart`)
+1. **Domain model**
+   - If the model will be consumed by more than one feature → `core/domain/models/<model>.dart`
+   - If solve-only → `features/solve/domain/models/<model>.dart`
+   - If feature-specific → `features/<name>/domain/models/<model>.dart`
    - Use `@freezed abstract class` for single-factory value objects
    - Use plain `class` for anything containing `Grid<T>` generics
    - Run `build_runner` after
@@ -300,8 +322,10 @@ stats/.../stats_providers.dart
    - Add DAO method in the relevant DAO
    - Run `build_runner` after
 
-3. **Repository** (`features/<name>/data/repositories/<name>_repository_impl.dart`)
-   - Expose via a `@Riverpod(keepAlive: true)` provider in a `providers/` file
+3. **Repository**
+   - Abstract interface → `features/<name>/domain/repositories/<name>_repository.dart`
+   - Concrete impl → `features/<name>/data/repositories/<name>_repository_impl.dart`
+   - Expose the **interface type** via a `@Riverpod(keepAlive: true)` provider; inject the impl
 
 4. **Notifier** (`features/<name>/presentation/notifiers/<name>_notifier.dart`)
    - `@riverpod class XyzNotifier extends _$XyzNotifier`
