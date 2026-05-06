@@ -31,9 +31,12 @@ GoRouter appRouter(Ref ref) {
         error: (_, __) => false,
       );
       final onOnboarding = state.matchedLocation == Routes.onboarding;
+      final replayOnboarding = state.uri.queryParameters['replay'] == '1';
 
       if (!hasOnboarded && !onOnboarding) return Routes.onboarding;
-      if (hasOnboarded && onOnboarding) return Routes.home;
+      if (hasOnboarded && onOnboarding && !replayOnboarding) {
+        return Routes.home;
+      }
       return null;
     },
     routes: [

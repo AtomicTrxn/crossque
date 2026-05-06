@@ -17,7 +17,6 @@ import 'package:crosscue/features/stats/presentation/providers/stats_providers.d
 import 'package:crosscue/core/domain/models/enums.dart';
 import 'package:crosscue/features/solve/presentation/notifiers/solve_notifier.dart';
 import 'package:crosscue/features/solve/presentation/notifiers/solve_state.dart';
-import 'package:crosscue/features/solve/presentation/widgets/clue_bar.dart';
 import 'package:crosscue/features/solve/presentation/widgets/clue_panel.dart';
 import 'package:crosscue/features/solve/presentation/widgets/crossword_grid.dart';
 import 'package:crosscue/features/solve/presentation/widgets/crossword_keyboard.dart';
@@ -82,8 +81,7 @@ class _SolveScreenState extends ConsumerState<SolveScreen>
     }
 
     // Spec §08: wave flash (500ms) → confetti (800ms) → sheet slide up (350ms)
-    final animationsDisabled =
-        MediaQuery.of(context).disableAnimations;
+    final animationsDisabled = MediaQuery.of(context).disableAnimations;
 
     Future<void> showSheet() async {
       if (!mounted) return;
@@ -144,6 +142,7 @@ class _SolveScreenState extends ConsumerState<SolveScreen>
         final puzzle = solveState.puzzle;
         final isComplete = solveState.status == PuzzleStatus.solved ||
             solveState.status == PuzzleStatus.solvedWithHelp ||
+            solveState.status == PuzzleStatus.solvedWithReveal ||
             solveState.status == PuzzleStatus.revealed;
 
         return Scaffold(
@@ -163,17 +162,6 @@ class _SolveScreenState extends ConsumerState<SolveScreen>
               Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  // ClueBar — tappable to toggle direction
-                  ClueBar(
-                    solveState: solveState,
-                    onToggleDirection: () {
-                      if (_hapticsOn) HapticFeedback.selectionClick();
-                      ref
-                          .read(solveProvider(widget.puzzleId).notifier)
-                          .toggleDirection();
-                    },
-                  ),
-
                   // Full-width grid — self-sizes its height
                   CrosswordGrid(
                     puzzleId: widget.puzzleId,
@@ -182,12 +170,21 @@ class _SolveScreenState extends ConsumerState<SolveScreen>
 
                   // Two-column clue panel — takes remaining vertical space
                   Expanded(
-                    child: CluePanel(solveState: solveState),
+                    child: CluePanel(
+                      solveState: solveState,
+                      onClueTap: (clue) {
+                        if (_hapticsOn) HapticFeedback.selectionClick();
+                        ref
+                            .read(solveProvider(widget.puzzleId).notifier)
+                            .focusClue(clue);
+                      },
+                    ),
                   ),
 
                   // Custom QWERTY keyboard
                   if (!isComplete)
                     CrosswordKeyboard(
+                      isSmallPuzzle: puzzle.width <= 7 && puzzle.height <= 7,
                       hapticsEnabled: _hapticsOn,
                       onLetter: (l) {
                         final wordComplete = ref
@@ -677,7 +674,11 @@ class _CheckRevealMenu extends ConsumerWidget {
               'This will fill the whole puzzle. The solve will not count toward your streak.',
             ),
             actions: [
-              TextButton(
+              FilledButton(
+                style: FilledButton.styleFrom(
+                  backgroundColor: CrosscueColors.primary,
+                  foregroundColor: Colors.white,
+                ),
                 onPressed: () => Navigator.pop(ctx, false),
                 child: const Text('Cancel'),
               ),

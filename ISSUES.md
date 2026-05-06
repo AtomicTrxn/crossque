@@ -13,20 +13,25 @@ Status key: 🐛 Bug · ✨ Enhancement · 💡 Idea · ✅ Done · ❌ Won't Fi
 | # | Type | Title | Sprint Target | Notes |
 |---|------|-------|---------------|-------|
 | 3 | ✨ | In-app puzzle downloader for free/licensed sources | Sprint 8+ | See detail below; legal review required before any source ships |
-| 5 | ✨ | Solve screen: replace ClueBar header with inline word highlight only | Next | Remove the AppBar-adjacent clue text header; the active/cross clue bar above the keyboard is the sole hint surface. Repeated tap on same cell toggles across↔down. See detail. |
-| 6 | ✨ | Keyboard: larger keys for finger-friendly tapping | Next | Increase key height and font size; see detail for spec deltas |
 | 7 | ✨ | Completed words/letters: soft green fill color | Next | Apply a muted green (`#C8E6C9` bg / `#2E7D32` text) to fully correct words; distinct from the check-correct state |
-| 8 | 🐛 | Settings → How to Play does not launch onboarding | Next | Tapping "How to Play" in Settings should push `OnboardingScreen` via `context.push(Routes.onboarding)` |
 | 9 | ✨ | About screen: icon + description + GitHub link | Next | Currently a stub. Add app icon, 2-line tagline, version string, and a tappable GitHub URL. See detail. |
 | 10 | 🐛 | Export and import data not implemented or wired up | Next | JSON export of completed session records; additive import. See detail. |
-| 11 | ✨ | Clear data modal: cancel button larger and blue | Next | The cancel button in the "Clear All Data" confirmation dialog should be the same size/style as the destructive button but in `#1565C0` blue |
 | 12 | 🐛 | Crash reporting saves nothing — wire up local log | Next | `CrashReporter` is a no-op stub. Phase 1 target: capture crash/error details to a local file in `getApplicationDocumentsDirectory()`. No transmission yet. See detail. |
 | 13 | 🐛 | Colorblind mode (Deuteranopia) not implemented | Next | Dot in upper-right corner of cell = correct letter. Extensible for future types. Settings note explaining the dot. See detail. |
 | 14 | 🐛 | Sounds not implemented; merge with haptics into "Touch & Sound" section | Next | `audioplayers` package; programmatically generated soft beep; mirrors haptics trigger points. See detail. |
-| 15 | ✨ | Reveal puzzle dialog: cancel button blue | Next | Cancel in the "Reveal Puzzle" confirmation dialog should be blue (`#1565C0`), matching the primary action style, so both buttons are visually equal weight |
-| 16 | 🐛 | Revealing entire puzzle does not mark puzzle as complete | Next | `SolveNotifier.revealGrid()` fills all cells but `_checkCompletion()` is not called afterward. Should set status to `PuzzleStatus.revealed` and trigger completion sheet. |
-| 17 | ✨ | Clue panel: auto-center active clue and tappable rows | Next | Scroll active clue to center of visible list on focus change. Tapping any clue row should move focus to that word's first empty cell. See detail. |
-| 18 | ✨ | Clue panel: larger font, show only 5 clues | Next | Increase clue text from current size to `14px`; limit visible rows to 5 (across + down combined) to free vertical space for larger keyboard keys. See detail. |
+
+## Done
+
+| # | Type | Title | Shipped | Notes |
+|---|------|-------|---------|-------|
+| 5 | ✨ | Solve screen: replace ClueBar header with inline word highlight only | 2026-05-06 | Removed `ClueBar`; same-cell tap still toggles direction |
+| 6 | ✨ | Keyboard: larger keys for finger-friendly tapping | 2026-05-06 | Letter keys are 44dp/14px; mini puzzles use 48dp/15px; special keys are 46dp |
+| 8 | 🐛 | Settings → How to Play does not launch onboarding | 2026-05-06 | Added replay route query to bypass the onboarded-user redirect |
+| 11 | ✨ | Clear data modal: cancel button larger and blue | 2026-05-06 | Cancel is now a filled primary-blue button |
+| 15 | ✨ | Reveal puzzle dialog: cancel button blue | 2026-05-06 | Cancel is now a filled primary-blue button |
+| 16 | 🐛 | Revealing entire puzzle does not mark puzzle as complete | 2026-05-06 | Verified reveal completion path and tightened terminal-state UI handling |
+| 17 | ✨ | Clue panel: auto-center active clue and tappable rows | 2026-05-06 | Rows are tappable and focus the first empty cell in the selected clue |
+| 18 | ✨ | Clue panel: larger font, show only 5 clues | 2026-05-06 | Clue text is 14px and panel height is capped to five visible rows |
 
 ---
 

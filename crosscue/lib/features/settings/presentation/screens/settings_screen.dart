@@ -189,7 +189,7 @@ class SettingsScreen extends ConsumerWidget {
             leading: Icons.help_outline,
             title: 'How to play',
             subtitle: 'Replay the onboarding walkthrough',
-            onTap: () => context.push(Routes.onboarding),
+            onTap: () => context.push(Routes.onboardingReplay),
           ),
           _NavRow(
             leading: Icons.info_outline,
@@ -216,7 +216,11 @@ class SettingsScreen extends ConsumerWidget {
           'and setting. This cannot be undone.',
         ),
         actions: [
-          TextButton(
+          FilledButton(
+            style: FilledButton.styleFrom(
+              backgroundColor: CrosscueColors.primary,
+              foregroundColor: Colors.white,
+            ),
             onPressed: () => Navigator.of(ctx).pop(false),
             child: const Text('Cancel'),
           ),

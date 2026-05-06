@@ -11,16 +11,21 @@ import 'package:crosscue/features/solve/presentation/notifiers/solve_state.dart'
 /// Design spec:
 /// - Two equal columns: ACROSS (left) + DOWN (right), 1px divider between.
 /// - Header: 10px w700 #999999 UPPERCASE letterSpacing 0.1em, 7dp top / 10dp H padding.
-/// - Clue row: 3dp vertical, 10dp horizontal.
-///   - Number: 10px w600 #999999, width 14dp.
-///   - Text: 11px #555555 lineHeight 1.3.
+/// - Clue row: fixed 42dp height, tappable.
+///   - Number: 10px w600 #999999, width 18dp.
+///   - Text: 14px #555555 lineHeight 1.3.
 ///   - Active clue bg: word = #BBDEFB, cross = #E3F2FD.
 ///   - Active clue text: #1565C0 w600.
 /// - Auto-scroll active clue into view (150ms easeOut).
 class CluePanel extends StatefulWidget {
-  const CluePanel({super.key, required this.solveState});
+  const CluePanel({
+    super.key,
+    required this.solveState,
+    required this.onClueTap,
+  });
 
   final SolveState solveState;
+  final ValueChanged<Clue> onClueTap;
 
   @override
   State<CluePanel> createState() => _CluePanelState();
@@ -51,10 +56,12 @@ class _CluePanelState extends State<CluePanel> {
   }
 
   void _scrollActiveIntoView(SolveState state) {
-    final acrossClues =
-        widget.solveState.puzzle.clues.where((c) => c.direction == Direction.across).toList();
-    final downClues =
-        widget.solveState.puzzle.clues.where((c) => c.direction == Direction.down).toList();
+    final acrossClues = widget.solveState.puzzle.clues
+        .where((c) => c.direction == Direction.across)
+        .toList();
+    final downClues = widget.solveState.puzzle.clues
+        .where((c) => c.direction == Direction.down)
+        .toList();
 
     final activeClue = state.activeClue;
     final crossClue = state.crossClue;
@@ -63,14 +70,16 @@ class _CluePanelState extends State<CluePanel> {
       final ctrl = activeClue.direction == Direction.across
           ? _acrossController
           : _downController;
-      final clues = activeClue.direction == Direction.across ? acrossClues : downClues;
+      final clues =
+          activeClue.direction == Direction.across ? acrossClues : downClues;
       _scrollToClue(ctrl, clues, activeClue);
     }
     if (crossClue != null) {
       final ctrl = crossClue.direction == Direction.across
           ? _acrossController
           : _downController;
-      final clues = crossClue.direction == Direction.across ? acrossClues : downClues;
+      final clues =
+          crossClue.direction == Direction.across ? acrossClues : downClues;
       _scrollToClue(ctrl, clues, crossClue);
     }
   }
@@ -85,7 +94,9 @@ class _CluePanelState extends State<CluePanel> {
     const headerH = _kHeaderH;
     final idx = clues.indexWhere((c) => c.number == target.number);
     if (idx < 0) return;
-    final offset = (headerH + idx * rowH).clamp(
+    final viewportH = ctrl.position.viewportDimension;
+    final centeredOffset = headerH + idx * rowH - (viewportH - rowH) / 2;
+    final offset = centeredOffset.clamp(
       0.0,
       ctrl.position.maxScrollExtent,
     );
@@ -108,48 +119,64 @@ class _CluePanelState extends State<CluePanel> {
     final downClues =
         state.puzzle.clues.where((c) => c.direction == Direction.down).toList();
 
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        // ACROSS column
-        Expanded(
-          child: _ClueColumn(
-            header: 'Across',
-            clues: acrossClues,
-            activeClue: state.activeClue,
-            crossClue: state.crossClue,
-            controller: _acrossController,
-            xwTheme: xwTheme,
-          ),
-        ),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final panelHeight = constraints.maxHeight.clamp(
+          0.0,
+          _kHeaderH + _kRowH * 5,
+        );
+        return Align(
+          alignment: Alignment.topCenter,
+          child: SizedBox(
+            height: panelHeight,
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // ACROSS column
+                Expanded(
+                  child: _ClueColumn(
+                    header: 'Across',
+                    clues: acrossClues,
+                    activeClue: state.activeClue,
+                    crossClue: state.crossClue,
+                    controller: _acrossController,
+                    xwTheme: xwTheme,
+                    onClueTap: widget.onClueTap,
+                  ),
+                ),
 
-        // Divider
-        VerticalDivider(
-          width: 1,
-          thickness: 1,
-          color: Theme.of(context).dividerColor,
-        ),
+                // Divider
+                VerticalDivider(
+                  width: 1,
+                  thickness: 1,
+                  color: Theme.of(context).dividerColor,
+                ),
 
-        // DOWN column
-        Expanded(
-          child: _ClueColumn(
-            header: 'Down',
-            clues: downClues,
-            activeClue: state.activeClue,
-            crossClue: state.crossClue,
-            controller: _downController,
-            xwTheme: xwTheme,
+                // DOWN column
+                Expanded(
+                  child: _ClueColumn(
+                    header: 'Down',
+                    clues: downClues,
+                    activeClue: state.activeClue,
+                    crossClue: state.crossClue,
+                    controller: _downController,
+                    xwTheme: xwTheme,
+                    onClueTap: widget.onClueTap,
+                  ),
+                ),
+              ],
+            ),
           ),
-        ),
-      ],
+        );
+      },
     );
   }
 }
 
 // Row / header heights used for scroll offset math.
-const double _kHeaderH = 28.0; // 7dp top + ~10dp text + 11dp bottom ≈ 28
-const double _kRowV = 3.0;
-const double _kRowH = 10.0;
+const double _kHeaderH = 28.0; // 7dp top + ~10dp text + 11dp bottom ~= 28
+const double _kRowPadH = 10.0;
+const double _kRowH = 42.0;
 
 class _ClueColumn extends StatelessWidget {
   const _ClueColumn({
@@ -159,6 +186,7 @@ class _ClueColumn extends StatelessWidget {
     required this.crossClue,
     required this.controller,
     required this.xwTheme,
+    required this.onClueTap,
   });
 
   final String header;
@@ -167,6 +195,7 @@ class _ClueColumn extends StatelessWidget {
   final Clue? crossClue;
   final ScrollController controller;
   final CrosswordTheme xwTheme;
+  final ValueChanged<Clue> onClueTap;
 
   @override
   Widget build(BuildContext context) {
@@ -186,9 +215,9 @@ class _ClueColumn extends StatelessWidget {
         if (i == 0) {
           return Padding(
             padding: const EdgeInsets.fromLTRB(
-              _kRowH,
+              _kRowPadH,
               7,
-              _kRowH,
+              _kRowPadH,
               4,
             ),
             child: Text(header.toUpperCase(), style: headerStyle),
@@ -216,7 +245,7 @@ class _ClueColumn extends StatelessWidget {
           height: 1.3,
         );
         final textStyle = TextStyle(
-          fontSize: 11,
+          fontSize: 14,
           fontWeight: isActive || isCross ? FontWeight.w600 : FontWeight.w400,
           color: isActive || isCross
               ? xwTheme.clueBarDirection
@@ -224,29 +253,37 @@ class _ClueColumn extends StatelessWidget {
           height: 1.3,
         );
 
-        return Container(
-          color: rowBg,
-          padding: const EdgeInsets.symmetric(
-            vertical: _kRowV,
-            horizontal: _kRowH,
-          ),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              SizedBox(
-                width: 14,
-                child: Text('${clue.number}', style: numStyle),
-              ),
-              const SizedBox(width: 4),
-              Expanded(
-                child: Text(
-                  clue.text,
-                  style: textStyle,
-                  maxLines: 3,
-                  overflow: TextOverflow.ellipsis,
+        return SizedBox(
+          height: _kRowH,
+          child: Material(
+            color: rowBg ?? Colors.transparent,
+            child: InkWell(
+              onTap: () => onClueTap(clue),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(
+                  vertical: 5,
+                  horizontal: _kRowPadH,
+                ),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    SizedBox(
+                      width: 18,
+                      child: Text('${clue.number}', style: numStyle),
+                    ),
+                    const SizedBox(width: 5),
+                    Expanded(
+                      child: Text(
+                        clue.text,
+                        style: textStyle,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ],
                 ),
               ),
-            ],
+            ),
           ),
         );
       },

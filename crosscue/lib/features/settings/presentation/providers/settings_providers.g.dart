@@ -50,7 +50,7 @@ final class AppSettingsProvider extends $FunctionalProvider<
   }
 }
 
-String _$appSettingsHash() => r'26d85c18a53425b14f17ad7f511d20952773f871';
+String _$appSettingsHash() => r'9296103eb8a4b2218e21bff404c929473c8d03c9';
 
 /// Whether the user has seen the onboarding flow.
 /// Used by the router redirect; invalidated after onboarding completes.

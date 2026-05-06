@@ -8,6 +8,7 @@ abstract final class Routes {
 
   // Full-page routes (push over shell)
   static const onboarding = '/onboarding';
+  static const onboardingReplay = '/onboarding?replay=1';
   static const import_ = '/import';
   static const sourceManagement = '/settings/sources';
   static const solve = '/solve/:puzzleId';
