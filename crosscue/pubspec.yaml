@@ -83,8 +83,11 @@ dev_dependencies:
   drift_dev: ^2.20.0
   riverpod_generator: ^4.0.3
 
-  # Splash screen generation (run once; not a runtime dep)
-  flutter_native_splash: ^2.4.0
+  # Splash screen generation is run on demand with:
+  # dart run flutter_native_splash:create
+  # Keep this package out of active dependencies so release APK builds do not
+  # register its generator-only Android plugin.
+  # flutter_native_splash: ^2.4.0
 
   # Linting
   flutter_lints: ^4.0.0
