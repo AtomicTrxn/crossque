@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:crosscue/core/theme/design_tokens.dart';
+import 'package:crosscue/core/theme/theme_colors.dart';
 import 'package:crosscue/core/utils/time_format.dart';
 import 'package:crosscue/features/stats/domain/models/stats_data.dart';
 import 'package:crosscue/features/stats/presentation/providers/stats_providers.dart';
@@ -109,7 +110,7 @@ class _StreakSection extends StatelessWidget {
             style: TextStyle(
               fontSize: 12,
               fontWeight: FontWeight.w600,
-              color: _onSurface3(context),
+              color: context.crosscueOnSurface3,
               letterSpacing: 1.0,
             ),
           ),
@@ -126,7 +127,7 @@ class _StreakSection extends StatelessWidget {
               Container(
                 width: 1,
                 height: 64,
-                color: _divider(context),
+                color: context.crosscueDivider,
               ),
               Expanded(
                 child: _StreakCell(
@@ -164,7 +165,7 @@ class _StreakCell extends StatelessWidget {
           style: TextStyle(
             fontSize: 11,
             fontWeight: FontWeight.w600,
-            color: _onSurface3(context),
+            color: context.crosscueOnSurface3,
             letterSpacing: 1.0,
             height: 1.2,
           ),
@@ -175,7 +176,7 @@ class _StreakCell extends StatelessWidget {
           style: TextStyle(
             fontSize: 40,
             fontWeight: FontWeight.w700,
-            color: _onSurface1(context),
+            color: context.crosscueOnSurface1,
             letterSpacing: -1,
             height: 1,
           ),
@@ -185,7 +186,7 @@ class _StreakCell extends StatelessWidget {
           sub,
           style: TextStyle(
             fontSize: CrosscueTypography.label,
-            color: _onSurface3(context),
+            color: context.crosscueOnSurface3,
           ),
         ),
       ],
@@ -279,7 +280,7 @@ class _TimeCell extends StatelessWidget {
             fontFamily: CrosscueTypography.robotoMono,
             fontSize: 24,
             fontWeight: FontWeight.w700,
-            color: _onSurface1(context),
+            color: context.crosscueOnSurface1,
             letterSpacing: -0.5,
             height: 1,
           ),
@@ -298,7 +299,7 @@ class _TimeCell extends StatelessWidget {
           sub,
           style: TextStyle(
             fontSize: 10,
-            color: _onSurface3(context),
+            color: context.crosscueOnSurface3,
           ),
         ),
       ],
@@ -369,7 +370,7 @@ class _TotalCell extends StatelessWidget {
           style: TextStyle(
             fontSize: 28,
             fontWeight: FontWeight.w700,
-            color: _onSurface1(context),
+            color: context.crosscueOnSurface1,
             letterSpacing: -0.5,
             height: 1,
           ),
@@ -379,7 +380,7 @@ class _TotalCell extends StatelessWidget {
           label,
           style: TextStyle(
             fontSize: 11,
-            color: _onSurface3(context),
+            color: context.crosscueOnSurface3,
             letterSpacing: 0.6,
           ),
           textAlign: TextAlign.center,
@@ -440,7 +441,7 @@ class _PBRow extends StatelessWidget {
             label,
             style: TextStyle(
               fontSize: CrosscueTypography.body,
-              color: _onSurface2(context),
+              color: context.crosscueOnSurface2,
             ),
           ),
           Text(
@@ -449,7 +450,7 @@ class _PBRow extends StatelessWidget {
               fontFamily: CrosscueTypography.robotoMono,
               fontSize: CrosscueTypography.body,
               fontWeight: FontWeight.w700,
-              color: _onSurface1(context),
+              color: context.crosscueOnSurface1,
               letterSpacing: 0.5,
             ),
           ),
@@ -527,7 +528,7 @@ class _DifficultyBar extends StatelessWidget {
               textAlign: TextAlign.right,
               style: TextStyle(
                 fontSize: CrosscueTypography.label,
-                color: _onSurface2(context),
+                color: context.crosscueOnSurface2,
               ),
             ),
           ),
@@ -540,7 +541,7 @@ class _DifficultyBar extends StatelessWidget {
                 child: Stack(
                   fit: StackFit.expand,
                   children: [
-                    ColoredBox(color: _divider(context)),
+                    ColoredBox(color: context.crosscueDivider),
                     FractionallySizedBox(
                       alignment: Alignment.centerLeft,
                       widthFactor: fraction,
@@ -559,7 +560,7 @@ class _DifficultyBar extends StatelessWidget {
               textAlign: TextAlign.right,
               style: TextStyle(
                 fontSize: CrosscueTypography.label,
-                color: _onSurface3(context),
+                color: context.crosscueOnSurface3,
               ),
             ),
           ),
@@ -601,7 +602,7 @@ class _CompletionSection extends StatelessWidget {
                 'Completion rate',
                 style: TextStyle(
                   fontSize: CrosscueTypography.body,
-                  color: _onSurface2(context),
+                  color: context.crosscueOnSurface2,
                 ),
               ),
               Column(
@@ -612,7 +613,7 @@ class _CompletionSection extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 28,
                       fontWeight: FontWeight.w700,
-                      color: _onSurface1(context),
+                      color: context.crosscueOnSurface1,
                       letterSpacing: -0.5,
                       height: 1,
                     ),
@@ -621,7 +622,7 @@ class _CompletionSection extends StatelessWidget {
                     '${stats.totalSolved + stats.revealedCount} of ${stats.startedCount} started',
                     style: TextStyle(
                       fontSize: CrosscueTypography.label,
-                      color: _onSurface3(context),
+                      color: context.crosscueOnSurface3,
                     ),
                   ),
                 ],
@@ -649,7 +650,7 @@ class _SectionLabel extends StatelessWidget {
       style: TextStyle(
         fontSize: 11,
         fontWeight: FontWeight.w600,
-        color: _onSurface3(context),
+        color: context.crosscueOnSurface3,
         letterSpacing: 1.0,
         height: 1.2,
       ),
@@ -662,7 +663,7 @@ class _SectionDivider extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Divider(height: 1, color: _divider(context));
+    return Divider(height: 1, color: context.crosscueDivider);
   }
 }
 
@@ -671,14 +672,14 @@ class _RowDivider extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Divider(height: 1, color: _divider(context));
+    return Divider(height: 1, color: context.crosscueDivider);
   }
 }
 
 class _VerticalDivider extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return Container(width: 1, height: 56, color: _divider(context));
+    return Container(width: 1, height: 56, color: context.crosscueDivider);
   }
 }
 
@@ -712,26 +713,3 @@ class _EmptyStats extends StatelessWidget {
     );
   }
 }
-
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
-
-bool _isLight(BuildContext context) =>
-    Theme.of(context).brightness == Brightness.light;
-
-Color _onSurface1(BuildContext context) => _isLight(context)
-    ? CrosscueColors.onSurface1Light
-    : CrosscueColors.onSurface1Dark;
-
-Color _onSurface2(BuildContext context) => _isLight(context)
-    ? CrosscueColors.onSurface2Light
-    : CrosscueColors.onSurface2Dark;
-
-Color _onSurface3(BuildContext context) => _isLight(context)
-    ? CrosscueColors.onSurface3Light
-    : CrosscueColors.onSurface3Dark;
-
-Color _divider(BuildContext context) => _isLight(context)
-    ? CrosscueColors.dividerLight
-    : CrosscueColors.dividerDark;

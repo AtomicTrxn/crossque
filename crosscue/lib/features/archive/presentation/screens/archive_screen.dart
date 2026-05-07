@@ -5,9 +5,11 @@ import 'package:intl/intl.dart';
 
 import 'package:crosscue/core/routing/routes.dart';
 import 'package:crosscue/core/theme/design_tokens.dart';
+import 'package:crosscue/core/theme/theme_colors.dart';
 import 'package:crosscue/core/utils/time_format.dart';
 import 'package:crosscue/features/archive/domain/models/archive_entry.dart';
 import 'package:crosscue/features/archive/presentation/providers/archive_providers.dart';
+import 'package:crosscue/features/home/presentation/providers/home_providers.dart';
 
 // ---------------------------------------------------------------------------
 // Sort / filter enums
@@ -147,6 +149,7 @@ class _ArchiveScreenState extends ConsumerState<ArchiveScreen> {
     if (confirmed != true) return;
     await ref.read(archiveRepositoryProvider).deletePuzzle(entry.puzzleId);
     ref.invalidate(archiveEntriesProvider);
+    ref.invalidate(puzzleListProvider);
   }
 }
 
@@ -165,7 +168,7 @@ class _FilterChips extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         border: Border(
-          bottom: BorderSide(color: _divider(context), width: 1),
+          bottom: BorderSide(color: context.crosscueDivider, width: 1),
         ),
       ),
       child: SingleChildScrollView(
@@ -214,9 +217,12 @@ class _FilterChip extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 5, horizontal: 14),
         decoration: BoxDecoration(
-          color: selected ? _primaryContainer(context) : Colors.transparent,
+          color:
+              selected ? context.crosscuePrimaryContainer : Colors.transparent,
           border: Border.all(
-            color: selected ? _wordHighlight(context) : _divider(context),
+            color: selected
+                ? context.crosscueWordHighlight
+                : context.crosscueDivider,
           ),
           borderRadius: BorderRadius.circular(CrosscueSpacing.chipRadius),
         ),
@@ -225,7 +231,8 @@ class _FilterChip extends StatelessWidget {
           style: TextStyle(
             fontSize: CrosscueTypography.bodySmall,
             fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
-            color: selected ? CrosscueColors.primary : _onSurface3(context),
+            color:
+                selected ? CrosscueColors.primary : context.crosscueOnSurface3,
           ),
         ),
       ),
@@ -261,7 +268,7 @@ class _SortBar extends StatelessWidget {
             '$count ${count == 1 ? 'puzzle' : 'puzzles'}',
             style: TextStyle(
               fontSize: CrosscueTypography.label,
-              color: _onSurface3(context),
+              color: context.crosscueOnSurface3,
             ),
           ),
           const Spacer(),
@@ -324,7 +331,7 @@ class _ArchiveRow extends StatelessWidget {
     final (iconData, iconColor) = _iconAndColor(context, entry);
     final subtitle = _subtitleParts(entry).join(' · ');
     final (statusNote, statusColor) = _statusNote(context, entry);
-    final onSurface3 = _onSurface3(context);
+    final onSurface3 = context.crosscueOnSurface3;
 
     return Column(
       children: [
@@ -357,7 +364,7 @@ class _ArchiveRow extends StatelessWidget {
                         style: TextStyle(
                           fontSize: CrosscueTypography.body,
                           fontWeight: FontWeight.w500,
-                          color: _onSurface1(context),
+                          color: context.crosscueOnSurface1,
                         ),
                       ),
                       if (subtitle.isNotEmpty)
@@ -399,7 +406,7 @@ class _ArchiveRow extends StatelessWidget {
           indent:
               52, // 16 screenH + 22 icon col + 10 gap + 4 extra = 52 per spec
           endIndent: 0,
-          color: _divider(context),
+          color: context.crosscueDivider,
         ),
       ],
     );
@@ -410,12 +417,12 @@ class _ArchiveRow extends StatelessWidget {
       return (Icons.star_rounded, CrosscueColors.primary);
     }
     if (e.isCompleted || e.isRevealed) {
-      return (Icons.check_circle_outline_rounded, _correct(context));
+      return (Icons.check_circle_outline_rounded, context.crosscueCorrect);
     }
     if (e.isInProgress) {
       return (Icons.timelapse_rounded, CrosscueColors.primaryMid);
     }
-    return (Icons.radio_button_unchecked_rounded, _onSurface3(context));
+    return (Icons.radio_button_unchecked_rounded, context.crosscueOnSurface3);
   }
 
   List<String> _subtitleParts(ArchiveEntry e) {
@@ -439,10 +446,10 @@ class _ArchiveRow extends StatelessWidget {
       final t = e.elapsedMs != null ? formatMs(e.elapsedMs!) : '';
       return (
         'Completed${t.isNotEmpty ? ' · $t' : ''}',
-        _correct(context),
+        context.crosscueCorrect,
       );
     }
-    if (e.isRevealed) return ('Revealed', _onSurface2(context));
+    if (e.isRevealed) return ('Revealed', context.crosscueOnSurface2);
     return (null, Colors.transparent);
   }
 }
@@ -493,37 +500,3 @@ class _EmptyFilter extends StatelessWidget {
     );
   }
 }
-
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
-
-bool _isLight(BuildContext context) =>
-    Theme.of(context).brightness == Brightness.light;
-
-Color _onSurface1(BuildContext context) => _isLight(context)
-    ? CrosscueColors.onSurface1Light
-    : CrosscueColors.onSurface1Dark;
-
-Color _onSurface2(BuildContext context) => _isLight(context)
-    ? CrosscueColors.onSurface2Light
-    : CrosscueColors.onSurface2Dark;
-
-Color _onSurface3(BuildContext context) => _isLight(context)
-    ? CrosscueColors.onSurface3Light
-    : CrosscueColors.onSurface3Dark;
-
-Color _divider(BuildContext context) => _isLight(context)
-    ? CrosscueColors.dividerLight
-    : CrosscueColors.dividerDark;
-
-Color _primaryContainer(BuildContext context) => _isLight(context)
-    ? CrosscueColors.primaryContLight
-    : CrosscueColors.primaryContDark;
-
-Color _wordHighlight(BuildContext context) =>
-    _isLight(context) ? CrosscueColors.wordHLLight : CrosscueColors.wordHLDark;
-
-Color _correct(BuildContext context) => _isLight(context)
-    ? CrosscueColors.correctLight
-    : CrosscueColors.correctDark;

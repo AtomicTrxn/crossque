@@ -2,8 +2,10 @@ import 'dart:async';
 
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
+import 'package:crosscue/features/archive/presentation/providers/archive_providers.dart';
 import 'package:crosscue/features/import/presentation/providers/import_providers.dart';
 import 'package:crosscue/features/settings/presentation/providers/settings_providers.dart';
+import 'package:crosscue/features/solve/domain/services/clue_progress_calculator.dart';
 import 'package:crosscue/features/solve/presentation/providers/solve_providers.dart';
 import 'package:crosscue/features/stats/presentation/providers/stats_providers.dart';
 import 'package:crosscue/features/solve/domain/models/cell_progress.dart';
@@ -19,6 +21,7 @@ part 'solve_notifier.g.dart';
 class SolveNotifier extends _$SolveNotifier {
   StreamSubscription<int>? _timerSub;
   Timer? _saveDebounce;
+  bool _refreshArchiveAfterSave = false;
 
   /// Safely read the current SolveState from AsyncValue.
   SolveState? get _s => switch (state) {
@@ -111,26 +114,29 @@ class SolveNotifier extends _$SolveNotifier {
     }
   }
 
-  void tapCell(int row, int col) {
+  FocusPosition? tapCell(int row, int col) {
     final s = _s;
-    if (s == null) return;
-    if (s.puzzle.grid.cell(row, col).isBlack) return;
+    if (s == null) return null;
+    if (s.puzzle.grid.cell(row, col).isBlack) return null;
 
     if (s.focus.row == row && s.focus.col == col) {
       final newDir = s.focus.direction == Direction.across
           ? Direction.down
           : Direction.across;
       if (_hasWord(s, row, col, newDir)) {
-        state =
-            AsyncData(s.copyWith(focus: s.focus.copyWith(direction: newDir)));
+        final focus = s.focus.copyWith(direction: newDir);
+        state = AsyncData(s.copyWith(focus: focus));
+        return focus;
       }
+      return s.focus;
     } else {
       Direction dir = s.focus.direction;
       if (!_hasWord(s, row, col, dir)) {
         dir = dir == Direction.across ? Direction.down : Direction.across;
       }
-      state = AsyncData(
-          s.copyWith(focus: FocusPosition(row: row, col: col, direction: dir)));
+      final focus = FocusPosition(row: row, col: col, direction: dir);
+      state = AsyncData(s.copyWith(focus: focus));
+      return focus;
     }
   }
 
@@ -277,6 +283,7 @@ class SolveNotifier extends _$SolveNotifier {
       cleanSolveEligible: true,
     ));
 
+    _refreshArchiveAfterSave = true;
     _saveNow(); // Persist the reset immediately
   }
 
@@ -310,7 +317,8 @@ class SolveNotifier extends _$SolveNotifier {
       checkCount: s.checkCount + 1,
       usedCheck: true,
     ));
-    _scheduleSave();
+    _scheduleSave(refreshArchive: true);
+    _checkCompletion();
     return correct ? CheckResult.allCorrect : CheckResult.hasIncorrect;
   }
 
@@ -348,7 +356,8 @@ class SolveNotifier extends _$SolveNotifier {
       checkCount: s.checkCount + 1,
       usedCheck: true,
     ));
-    _scheduleSave();
+    _scheduleSave(refreshArchive: true);
+    _checkCompletion();
     return hasIncorrect ? CheckResult.hasIncorrect : CheckResult.allCorrect;
   }
 
@@ -386,7 +395,8 @@ class SolveNotifier extends _$SolveNotifier {
       checkCount: s.checkCount + 1,
       usedCheck: true,
     ));
-    _scheduleSave();
+    _scheduleSave(refreshArchive: true);
+    _checkCompletion();
     return hasIncorrect ? CheckResult.hasIncorrect : CheckResult.allCorrect;
   }
 
@@ -420,7 +430,7 @@ class SolveNotifier extends _$SolveNotifier {
       cleanSolveEligible: false,
     );
     state = AsyncData(updated);
-    _scheduleSave();
+    _scheduleSave(refreshArchive: true);
     _checkCompletion();
   }
 
@@ -452,7 +462,7 @@ class SolveNotifier extends _$SolveNotifier {
       cleanSolveEligible: false,
     );
     state = AsyncData(updated);
-    _scheduleSave();
+    _scheduleSave(refreshArchive: true);
     _checkCompletion();
   }
 
@@ -480,6 +490,7 @@ class SolveNotifier extends _$SolveNotifier {
 
     _timerSub?.cancel();
     _saveDebounce?.cancel();
+    _refreshArchiveAfterSave = false;
 
     final completed = s.copyWith(
       progress: progress,
@@ -499,7 +510,8 @@ class SolveNotifier extends _$SolveNotifier {
   // Autosave
   // ---------------------------------------------------------------------------
 
-  void _scheduleSave() {
+  void _scheduleSave({bool refreshArchive = false}) {
+    _refreshArchiveAfterSave = _refreshArchiveAfterSave || refreshArchive;
     _saveDebounce?.cancel();
     _saveDebounce = Timer(const Duration(milliseconds: 500), _saveNow);
   }
@@ -523,6 +535,10 @@ class SolveNotifier extends _$SolveNotifier {
       usedReveal: s.usedReveal,
       cleanSolveEligible: s.cleanSolveEligible,
     );
+    if (_refreshArchiveAfterSave) {
+      _refreshArchiveAfterSave = false;
+      ref.invalidate(archiveEntriesProvider);
+    }
   }
 
   Future<void> flushPendingSave() async {
@@ -593,24 +609,15 @@ class SolveNotifier extends _$SolveNotifier {
     return null;
   }
 
-  List<(int, int)> _clueCells(Clue clue) => [
-        for (var i = 0; i < clue.length; i++)
-          clue.direction == Direction.across
-              ? (clue.startRow, clue.startCol + i)
-              : (clue.startRow + i, clue.startCol),
-      ];
+  List<(int, int)> _clueCells(Clue clue) =>
+      ClueProgressCalculator.cellsFor(clue);
 
-  bool _isWordComplete(SolveState s, Clue clue) {
-    for (final (r, c) in _clueCells(clue)) {
-      final progress = s.progress.cell(r, c);
-      final solution = s.puzzle.grid.cell(r, c).solution;
-      if (progress.letter.isEmpty ||
-          progress.letter.toUpperCase() != solution.toUpperCase()) {
-        return false;
-      }
-    }
-    return true;
-  }
+  bool _isWordComplete(SolveState s, Clue clue) =>
+      ClueProgressCalculator.isClueCorrect(
+        puzzle: s.puzzle,
+        progress: s.progress,
+        clue: clue,
+      );
 
   // ---------------------------------------------------------------------------
   // Completion check
@@ -634,6 +641,7 @@ class SolveNotifier extends _$SolveNotifier {
 
     _timerSub?.cancel();
     _saveDebounce?.cancel();
+    _refreshArchiveAfterSave = false;
 
     // Distinguish reveal-assisted from check-only from clean (spec §08)
     final finalStatus = s.usedReveal
@@ -654,21 +662,24 @@ class SolveNotifier extends _$SolveNotifier {
     unawaited(
       repo
           .markComplete(
-            sessionId: s.sessionId!,
-            puzzleWidth: s.puzzle.width,
-            puzzleHeight: s.puzzle.height,
-            progress: s.progress,
-            focus: s.focus,
-            elapsedMs: s.elapsedSeconds * 1000,
-            status: s.status,
-            completionType: _deriveCompletionType(s),
-            checkCount: s.checkCount,
-            revealCount: s.revealCount,
-            usedCheck: s.usedCheck,
-            usedReveal: s.usedReveal,
-            cleanSolveEligible: s.cleanSolveEligible,
-          )
-          .then((_) => ref.invalidate(statsDataProvider)),
+        sessionId: s.sessionId!,
+        puzzleWidth: s.puzzle.width,
+        puzzleHeight: s.puzzle.height,
+        progress: s.progress,
+        focus: s.focus,
+        elapsedMs: s.elapsedSeconds * 1000,
+        status: s.status,
+        completionType: _deriveCompletionType(s),
+        checkCount: s.checkCount,
+        revealCount: s.revealCount,
+        usedCheck: s.usedCheck,
+        usedReveal: s.usedReveal,
+        cleanSolveEligible: s.cleanSolveEligible,
+      )
+          .then((_) {
+        ref.invalidate(statsDataProvider);
+        ref.invalidate(archiveEntriesProvider);
+      }),
     );
   }
 

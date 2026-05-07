@@ -114,32 +114,59 @@ class CrosswordTheme extends ThemeExtension<CrosswordTheme> {
   factory CrosswordTheme.of(ColorScheme scheme) {
     final isLight = scheme.brightness == Brightness.light;
     return CrosswordTheme(
-      cellActive:      isLight ? CrosscueColors.cellActiveLight : CrosscueColors.cellActiveDark,
-      wordHighlight:   isLight ? CrosscueColors.wordHLLight      : CrosscueColors.wordHLDark,
-      crossHighlight:  isLight ? CrosscueColors.crossHLLight     : CrosscueColors.crossHLDark,
-      gridBlack:       isLight ? CrosscueColors.gridBlackLight   : CrosscueColors.gridBlackDark,
-      gridEmpty:       isLight ? CrosscueColors.gridEmptyLight   : CrosscueColors.gridEmptyDark,
-      gridBorder:      isLight ? CrosscueColors.gridBorderLight  : CrosscueColors.gridBorderDark,
-      gridOuterBorder: isLight ? CrosscueColors.onSurface1Light  : CrosscueColors.onSurface1Dark,
-      cellText:        isLight ? CrosscueColors.onSurface1Light  : CrosscueColors.onSurface1Dark,
-      cellNumber:      isLight ? CrosscueColors.onSurface2Light  : CrosscueColors.onSurface2Dark,
-      stateCorrect:    isLight
+      cellActive: isLight
+          ? CrosscueColors.cellActiveLight
+          : CrosscueColors.cellActiveDark,
+      wordHighlight:
+          isLight ? CrosscueColors.wordHLLight : CrosscueColors.wordHLDark,
+      crossHighlight:
+          isLight ? CrosscueColors.crossHLLight : CrosscueColors.crossHLDark,
+      gridBlack: isLight
+          ? CrosscueColors.gridBlackLight
+          : CrosscueColors.gridBlackDark,
+      gridEmpty: isLight
+          ? CrosscueColors.gridEmptyLight
+          : CrosscueColors.gridEmptyDark,
+      gridBorder: isLight
+          ? CrosscueColors.gridBorderLight
+          : CrosscueColors.gridBorderDark,
+      gridOuterBorder: isLight
+          ? CrosscueColors.onSurface1Light
+          : CrosscueColors.onSurface1Dark,
+      cellText: isLight
+          ? CrosscueColors.onSurface1Light
+          : CrosscueColors.onSurface1Dark,
+      cellNumber: isLight
+          ? CrosscueColors.onSurface2Light
+          : CrosscueColors.onSurface2Dark,
+      stateCorrect: isLight
           ? CrosscueColors.correctLight.withValues(alpha: 0.20)
           : CrosscueColors.correctDark.withValues(alpha: 0.20),
-      stateIncorrect:  isLight
+      stateIncorrect: isLight
           ? CrosscueColors.incorrectLight.withValues(alpha: 0.20)
           : CrosscueColors.incorrectDark.withValues(alpha: 0.20),
-      stateRevealed:   isLight ? CrosscueColors.revealedLight    : CrosscueColors.revealedDark,
-      clueBarBg:       isLight ? CrosscueColors.primaryContLight : CrosscueColors.primaryContDark,
-      clueBarBorder:   isLight ? CrosscueColors.wordHLLight      : CrosscueColors.wordHLDark,
-      clueBarDirection:isLight ? CrosscueColors.primary          : CrosscueColors.primaryLight,
-      clueBarText:     isLight ? CrosscueColors.onSurface1Light  : CrosscueColors.onSurface1Dark,
-      activeClueBg:    isLight ? CrosscueColors.wordHLLight      : CrosscueColors.wordHLDark,
-      crossClueBg:     isLight ? CrosscueColors.crossHLLight     : CrosscueColors.crossHLDark,
-      keyboardBg:      isLight ? CrosscueColors.keyboardBg : const Color(0xFF1E1E1E),
-      keyDefault:      isLight ? CrosscueColors.surfaceLight : const Color(0xFF2C2C2C),
-      keySpecial:      CrosscueColors.keyDelete,
-      keyCheck:        isLight ? CrosscueColors.primary          : CrosscueColors.primaryLight,
+      stateRevealed:
+          isLight ? CrosscueColors.revealedLight : CrosscueColors.revealedDark,
+      clueBarBg: isLight
+          ? CrosscueColors.primaryContLight
+          : CrosscueColors.primaryContDark,
+      clueBarBorder:
+          isLight ? CrosscueColors.wordHLLight : CrosscueColors.wordHLDark,
+      clueBarDirection:
+          isLight ? CrosscueColors.primary : CrosscueColors.primaryLight,
+      clueBarText: isLight
+          ? CrosscueColors.onSurface1Light
+          : CrosscueColors.onSurface1Dark,
+      activeClueBg:
+          isLight ? CrosscueColors.wordHLLight : CrosscueColors.wordHLDark,
+      crossClueBg: isLight
+          ? CrosscueColors.crossHLLight.withValues(alpha: 0.55)
+          : CrosscueColors.crossHLDark.withValues(alpha: 0.35),
+      keyboardBg: isLight ? CrosscueColors.keyboardBg : const Color(0xFF1E1E1E),
+      keyDefault:
+          isLight ? CrosscueColors.surfaceLight : const Color(0xFF2C2C2C),
+      keySpecial: CrosscueColors.keyDelete,
+      keyCheck: isLight ? CrosscueColors.primary : CrosscueColors.primaryLight,
     );
   }
 
@@ -180,28 +207,28 @@ class CrosswordTheme extends ThemeExtension<CrosswordTheme> {
     Color? keyCheck,
   }) {
     return CrosswordTheme(
-      cellActive:       cellActive       ?? this.cellActive,
-      wordHighlight:    wordHighlight    ?? this.wordHighlight,
-      crossHighlight:   crossHighlight   ?? this.crossHighlight,
-      gridBlack:        gridBlack        ?? this.gridBlack,
-      gridEmpty:        gridEmpty        ?? this.gridEmpty,
-      gridBorder:       gridBorder       ?? this.gridBorder,
-      gridOuterBorder:  gridOuterBorder  ?? this.gridOuterBorder,
-      cellText:         cellText         ?? this.cellText,
-      cellNumber:       cellNumber       ?? this.cellNumber,
-      stateCorrect:     stateCorrect     ?? this.stateCorrect,
-      stateIncorrect:   stateIncorrect   ?? this.stateIncorrect,
-      stateRevealed:    stateRevealed    ?? this.stateRevealed,
-      clueBarBg:        clueBarBg        ?? this.clueBarBg,
-      clueBarBorder:    clueBarBorder    ?? this.clueBarBorder,
+      cellActive: cellActive ?? this.cellActive,
+      wordHighlight: wordHighlight ?? this.wordHighlight,
+      crossHighlight: crossHighlight ?? this.crossHighlight,
+      gridBlack: gridBlack ?? this.gridBlack,
+      gridEmpty: gridEmpty ?? this.gridEmpty,
+      gridBorder: gridBorder ?? this.gridBorder,
+      gridOuterBorder: gridOuterBorder ?? this.gridOuterBorder,
+      cellText: cellText ?? this.cellText,
+      cellNumber: cellNumber ?? this.cellNumber,
+      stateCorrect: stateCorrect ?? this.stateCorrect,
+      stateIncorrect: stateIncorrect ?? this.stateIncorrect,
+      stateRevealed: stateRevealed ?? this.stateRevealed,
+      clueBarBg: clueBarBg ?? this.clueBarBg,
+      clueBarBorder: clueBarBorder ?? this.clueBarBorder,
       clueBarDirection: clueBarDirection ?? this.clueBarDirection,
-      clueBarText:      clueBarText      ?? this.clueBarText,
-      activeClueBg:     activeClueBg     ?? this.activeClueBg,
-      crossClueBg:      crossClueBg      ?? this.crossClueBg,
-      keyboardBg:       keyboardBg       ?? this.keyboardBg,
-      keyDefault:       keyDefault       ?? this.keyDefault,
-      keySpecial:       keySpecial       ?? this.keySpecial,
-      keyCheck:         keyCheck         ?? this.keyCheck,
+      clueBarText: clueBarText ?? this.clueBarText,
+      activeClueBg: activeClueBg ?? this.activeClueBg,
+      crossClueBg: crossClueBg ?? this.crossClueBg,
+      keyboardBg: keyboardBg ?? this.keyboardBg,
+      keyDefault: keyDefault ?? this.keyDefault,
+      keySpecial: keySpecial ?? this.keySpecial,
+      keyCheck: keyCheck ?? this.keyCheck,
     );
   }
 
@@ -209,28 +236,29 @@ class CrosswordTheme extends ThemeExtension<CrosswordTheme> {
   CrosswordTheme lerp(CrosswordTheme? other, double t) {
     if (other is! CrosswordTheme) return this;
     return CrosswordTheme(
-      cellActive:       Color.lerp(cellActive,       other.cellActive,       t)!,
-      wordHighlight:    Color.lerp(wordHighlight,    other.wordHighlight,    t)!,
-      crossHighlight:   Color.lerp(crossHighlight,   other.crossHighlight,   t)!,
-      gridBlack:        Color.lerp(gridBlack,        other.gridBlack,        t)!,
-      gridEmpty:        Color.lerp(gridEmpty,        other.gridEmpty,        t)!,
-      gridBorder:       Color.lerp(gridBorder,       other.gridBorder,       t)!,
-      gridOuterBorder:  Color.lerp(gridOuterBorder,  other.gridOuterBorder,  t)!,
-      cellText:         Color.lerp(cellText,         other.cellText,         t)!,
-      cellNumber:       Color.lerp(cellNumber,       other.cellNumber,       t)!,
-      stateCorrect:     Color.lerp(stateCorrect,     other.stateCorrect,     t)!,
-      stateIncorrect:   Color.lerp(stateIncorrect,   other.stateIncorrect,   t)!,
-      stateRevealed:    Color.lerp(stateRevealed,    other.stateRevealed,    t)!,
-      clueBarBg:        Color.lerp(clueBarBg,        other.clueBarBg,        t)!,
-      clueBarBorder:    Color.lerp(clueBarBorder,    other.clueBarBorder,    t)!,
-      clueBarDirection: Color.lerp(clueBarDirection, other.clueBarDirection, t)!,
-      clueBarText:      Color.lerp(clueBarText,      other.clueBarText,      t)!,
-      activeClueBg:     Color.lerp(activeClueBg,     other.activeClueBg,     t)!,
-      crossClueBg:      Color.lerp(crossClueBg,      other.crossClueBg,      t)!,
-      keyboardBg:       Color.lerp(keyboardBg,       other.keyboardBg,       t)!,
-      keyDefault:       Color.lerp(keyDefault,       other.keyDefault,       t)!,
-      keySpecial:       Color.lerp(keySpecial,       other.keySpecial,       t)!,
-      keyCheck:         Color.lerp(keyCheck,         other.keyCheck,         t)!,
+      cellActive: Color.lerp(cellActive, other.cellActive, t)!,
+      wordHighlight: Color.lerp(wordHighlight, other.wordHighlight, t)!,
+      crossHighlight: Color.lerp(crossHighlight, other.crossHighlight, t)!,
+      gridBlack: Color.lerp(gridBlack, other.gridBlack, t)!,
+      gridEmpty: Color.lerp(gridEmpty, other.gridEmpty, t)!,
+      gridBorder: Color.lerp(gridBorder, other.gridBorder, t)!,
+      gridOuterBorder: Color.lerp(gridOuterBorder, other.gridOuterBorder, t)!,
+      cellText: Color.lerp(cellText, other.cellText, t)!,
+      cellNumber: Color.lerp(cellNumber, other.cellNumber, t)!,
+      stateCorrect: Color.lerp(stateCorrect, other.stateCorrect, t)!,
+      stateIncorrect: Color.lerp(stateIncorrect, other.stateIncorrect, t)!,
+      stateRevealed: Color.lerp(stateRevealed, other.stateRevealed, t)!,
+      clueBarBg: Color.lerp(clueBarBg, other.clueBarBg, t)!,
+      clueBarBorder: Color.lerp(clueBarBorder, other.clueBarBorder, t)!,
+      clueBarDirection:
+          Color.lerp(clueBarDirection, other.clueBarDirection, t)!,
+      clueBarText: Color.lerp(clueBarText, other.clueBarText, t)!,
+      activeClueBg: Color.lerp(activeClueBg, other.activeClueBg, t)!,
+      crossClueBg: Color.lerp(crossClueBg, other.crossClueBg, t)!,
+      keyboardBg: Color.lerp(keyboardBg, other.keyboardBg, t)!,
+      keyDefault: Color.lerp(keyDefault, other.keyDefault, t)!,
+      keySpecial: Color.lerp(keySpecial, other.keySpecial, t)!,
+      keyCheck: Color.lerp(keyCheck, other.keyCheck, t)!,
     );
   }
 }

@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import 'package:crosscue/core/routing/routes.dart';
 import 'package:crosscue/core/theme/design_tokens.dart';
+import 'package:crosscue/features/archive/presentation/providers/archive_providers.dart';
 import 'package:crosscue/features/home/presentation/providers/home_providers.dart';
 import 'package:crosscue/features/import/presentation/notifiers/import_notifier.dart';
 
@@ -108,6 +109,7 @@ class _ImportScreenState extends ConsumerState<ImportScreen> {
   void _showSuccessAndNavigate(ImportSuccess state) {
     // Invalidate the home list so it refreshes when we navigate there.
     ref.invalidate(puzzleListProvider);
+    ref.invalidate(archiveEntriesProvider);
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text('Imported "${state.title}" successfully!'),

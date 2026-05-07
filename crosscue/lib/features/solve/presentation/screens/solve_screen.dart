@@ -15,7 +15,9 @@ import 'package:crosscue/core/theme/design_tokens.dart';
 import 'package:crosscue/core/utils/time_format.dart';
 import 'package:crosscue/features/settings/presentation/providers/settings_providers.dart';
 import 'package:crosscue/features/stats/presentation/providers/stats_providers.dart';
+import 'package:crosscue/core/domain/models/clue.dart';
 import 'package:crosscue/core/domain/models/enums.dart';
+import 'package:crosscue/features/solve/domain/models/focus_position.dart';
 import 'package:crosscue/features/solve/presentation/notifiers/solve_notifier.dart';
 import 'package:crosscue/features/solve/presentation/notifiers/solve_state.dart';
 import 'package:crosscue/features/solve/presentation/widgets/clue_panel.dart';
@@ -35,6 +37,9 @@ class _SolveScreenState extends ConsumerState<SolveScreen>
     with WidgetsBindingObserver {
   bool _completionSheetShown = false;
   late final ConfettiController _confettiController;
+  String? _selectorPuzzleId;
+  Clue? _selectedActiveClue;
+  Clue? _selectedCrossClue;
 
   @override
   void initState() {
@@ -140,6 +145,78 @@ class _SolveScreenState extends ConsumerState<SolveScreen>
     });
   }
 
+  void _syncClueSelectors(SolveState solveState) {
+    if (_selectorPuzzleId == solveState.puzzle.id) return;
+    _selectorPuzzleId = solveState.puzzle.id;
+    _selectedActiveClue = solveState.activeClue;
+    _selectedCrossClue = solveState.crossClue;
+  }
+
+  void _setSelectorsFromFocus(SolveState solveState, FocusPosition focus) {
+    setState(() {
+      _selectedActiveClue = _clueForFocus(solveState, focus, focus.direction);
+      _selectedCrossClue = _clueForFocus(
+        solveState,
+        focus,
+        _oppositeDirection(focus.direction),
+      );
+    });
+  }
+
+  void _setSelectorsFromClue(SolveState solveState, Clue clue) {
+    final focus = _focusForClue(solveState, clue);
+    setState(() {
+      _selectedActiveClue = clue;
+      _selectedCrossClue = _clueForFocus(
+        solveState,
+        focus,
+        _oppositeDirection(clue.direction),
+      );
+    });
+  }
+
+  FocusPosition _focusForClue(SolveState solveState, Clue clue) {
+    var targetRow = clue.startRow;
+    var targetCol = clue.startCol;
+    for (final (row, col) in _clueCells(clue)) {
+      if (solveState.progress.cell(row, col).letter.isEmpty) {
+        targetRow = row;
+        targetCol = col;
+        break;
+      }
+    }
+    return FocusPosition(
+      row: targetRow,
+      col: targetCol,
+      direction: clue.direction,
+    );
+  }
+
+  Clue? _clueForFocus(
+    SolveState solveState,
+    FocusPosition focus,
+    Direction direction,
+  ) {
+    for (final clue in solveState.puzzle.clues) {
+      if (clue.direction == direction &&
+          SolveState.cellInClue(focus.row, focus.col, clue)) {
+        return clue;
+      }
+    }
+    return null;
+  }
+
+  Direction _oppositeDirection(Direction direction) {
+    return direction == Direction.across ? Direction.down : Direction.across;
+  }
+
+  List<(int, int)> _clueCells(Clue clue) => [
+        for (var i = 0; i < clue.length; i++)
+          clue.direction == Direction.across
+              ? (clue.startRow, clue.startCol + i)
+              : (clue.startRow + i, clue.startCol),
+      ];
+
   @override
   Widget build(BuildContext context) {
     final solveAsync = ref.watch(solveProvider(widget.puzzleId));
@@ -159,8 +236,11 @@ class _SolveScreenState extends ConsumerState<SolveScreen>
       ),
       data: (solveState) {
         _maybeShowCompletionSheet(solveState);
+        _syncClueSelectors(solveState);
 
         final puzzle = solveState.puzzle;
+        final selectedActiveClue = _selectedActiveClue ?? solveState.activeClue;
+        final selectedCrossClue = _selectedCrossClue ?? solveState.crossClue;
         final isComplete = solveState.status == PuzzleStatus.solved ||
             solveState.status == PuzzleStatus.solvedWithHelp ||
             solveState.status == PuzzleStatus.solvedWithReveal ||
@@ -187,15 +267,20 @@ class _SolveScreenState extends ConsumerState<SolveScreen>
                   CrosswordGrid(
                     puzzleId: widget.puzzleId,
                     solveState: solveState,
+                    onGridFocusSelected: (focus) =>
+                        _setSelectorsFromFocus(solveState, focus),
                   ),
 
                   // Two-column clue panel — takes remaining vertical space
                   Expanded(
                     child: CluePanel(
                       solveState: solveState,
+                      activeClue: selectedActiveClue,
+                      crossClue: selectedCrossClue,
                       hapticsEnabled: _hapticsOn,
                       onClueTap: (clue) {
                         if (_hapticsOn) HapticFeedback.selectionClick();
+                        _setSelectorsFromClue(solveState, clue);
                         ref
                             .read(solveProvider(widget.puzzleId).notifier)
                             .focusClue(clue);

@@ -7,6 +7,7 @@ import 'package:go_router/go_router.dart';
 import 'package:crosscue/core/domain/models/puzzle_metadata.dart';
 import 'package:crosscue/core/routing/routes.dart';
 import 'package:crosscue/core/theme/design_tokens.dart';
+import 'package:crosscue/core/theme/theme_colors.dart';
 import 'package:crosscue/core/utils/time_format.dart';
 import 'package:crosscue/features/archive/domain/models/archive_entry.dart';
 import 'package:crosscue/features/archive/presentation/providers/archive_providers.dart';
@@ -15,61 +16,11 @@ import 'package:crosscue/features/import/presentation/providers/source_registry_
 import 'package:crosscue/features/stats/presentation/providers/stats_providers.dart';
 import 'package:crosscue/features/home/presentation/providers/home_providers.dart';
 
-class HomeScreen extends ConsumerStatefulWidget {
+class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
 
   @override
-  ConsumerState<HomeScreen> createState() => _HomeScreenState();
-}
-
-class _HomeScreenState extends ConsumerState<HomeScreen>
-    with SingleTickerProviderStateMixin {
-  static bool _hasShownBanner = false;
-
-  late final AnimationController _bannerController;
-  late final Animation<Offset> _bannerOffset;
-  bool _bannerInTree = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _bannerController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 350),
-      reverseDuration: const Duration(milliseconds: 280),
-    );
-    _bannerOffset = Tween<Offset>(
-      begin: const Offset(0, -1.4),
-      end: Offset.zero,
-    ).animate(
-      CurvedAnimation(parent: _bannerController, curve: Curves.easeOutCubic),
-    );
-
-    if (!_hasShownBanner) {
-      _hasShownBanner = true;
-      _bannerInTree = true;
-      WidgetsBinding.instance.addPostFrameCallback((_) => _playBanner());
-    }
-  }
-
-  @override
-  void dispose() {
-    _bannerController.dispose();
-    super.dispose();
-  }
-
-  Future<void> _playBanner() async {
-    if (!mounted) return;
-    await _bannerController.forward();
-    await Future<void>.delayed(const Duration(seconds: 2));
-    if (!mounted) return;
-    await _bannerController.reverse();
-    if (!mounted) return;
-    setState(() => _bannerInTree = false);
-  }
-
-  @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final puzzlesAsync = ref.watch(puzzleListProvider);
     final statsAsync = ref.watch(statsDataProvider);
     final archiveAsync = ref.watch(archiveEntriesProvider);
@@ -82,6 +33,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
 
     return Scaffold(
       appBar: AppBar(
+        title: const Text('Today'),
         actions: [
           // Streak indicator
           if (currentStreak > 0)
@@ -97,7 +49,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                     style: TextStyle(
                       fontFamily: CrosscueTypography.robotoMono,
                       fontSize: CrosscueTypography.timer,
-                      color: _onSurface2(context),
+                      color: context.crosscueOnSurface2,
                       fontWeight: FontWeight.w500,
                     ),
                   ),
@@ -107,76 +59,59 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
         ],
       ),
       floatingActionButton: const _ImportFAB(),
-      body: Stack(
-        children: [
-          puzzlesAsync.when(
-            loading: () => const Center(child: CircularProgressIndicator()),
-            error: (e, _) => Center(child: Text('Error: $e')),
-            data: (puzzles) {
-              if (puzzles.isEmpty) {
-                return _EmptyState(
-                  onImport: () => context.push(Routes.import_),
-                );
-              }
+      body: puzzlesAsync.when(
+        loading: () => const Center(child: CircularProgressIndicator()),
+        error: (e, _) => Center(child: Text('Error: $e')),
+        data: (puzzles) {
+          if (puzzles.isEmpty) {
+            return _EmptyState(
+              onImport: () => context.push(Routes.import_),
+            );
+          }
 
-              // Use archive entries for richer status info; fall back to metadata
-              final entries = archiveAsync.asData?.value ?? [];
-              final entryMap = {for (final e in entries) e.puzzleId: e};
+          // Use archive entries for richer status info; fall back to metadata
+          final entries = archiveAsync.asData?.value ?? [];
+          final entryMap = {for (final e in entries) e.puzzleId: e};
 
-              // Sort by import date (most recent first) to pick "current" puzzle
-              final sorted = List<PuzzleMetadata>.from(puzzles)
-                ..sort((a, b) => b.importedAt.compareTo(a.importedAt));
+          // Sort by import date (most recent first) to pick "current" puzzle
+          final sorted = List<PuzzleMetadata>.from(puzzles)
+            ..sort((a, b) => b.importedAt.compareTo(a.importedAt));
 
-              final featured = sorted.first;
-              final recent =
-                  sorted.length > 1 ? sorted.sublist(1) : <PuzzleMetadata>[];
+          final featured = sorted.first;
+          final recent =
+              sorted.length > 1 ? sorted.sublist(1) : <PuzzleMetadata>[];
 
-              return ListView(
-                children: [
-                  // ── Today section ────────────────────────────────────────
-                  const _SectionHeader('Today'),
-                  _FeaturedPuzzle(
-                    puzzle: featured,
-                    entry: entryMap[featured.id],
-                    onTap: () => context.push(
-                      Routes.solveFor(Uri.encodeComponent(featured.id)),
-                    ),
-                  ),
-
-                  if (recent.isNotEmpty) ...[
-                    Divider(height: 1, color: _divider(context)),
-                    const _SectionHeader('Recent'),
-                    ...recent.map((p) {
-                      final entry = entryMap[p.id];
-                      return _PuzzleRow(
-                        puzzle: p,
-                        entry: entry,
-                        onTap: () => context.push(
-                          Routes.solveFor(Uri.encodeComponent(p.id)),
-                        ),
-                      );
-                    }),
-                  ],
-
-                  // Bottom padding so FAB doesn't overlap last row
-                  const SizedBox(height: 88),
-                ],
-              );
-            },
-          ),
-          if (_bannerInTree)
-            Positioned(
-              top: 10,
-              left: 0,
-              right: 0,
-              child: IgnorePointer(
-                child: SlideTransition(
-                  position: _bannerOffset,
-                  child: const _ColdStartBanner(),
+          return ListView(
+            children: [
+              const SizedBox(height: 20),
+              _FeaturedPuzzle(
+                puzzle: featured,
+                entry: entryMap[featured.id],
+                onTap: () => context.push(
+                  Routes.solveFor(Uri.encodeComponent(featured.id)),
                 ),
               ),
-            ),
-        ],
+
+              if (recent.isNotEmpty) ...[
+                Divider(height: 1, color: context.crosscueDivider),
+                const _SectionHeader('Recent'),
+                ...recent.map((p) {
+                  final entry = entryMap[p.id];
+                  return _PuzzleRow(
+                    puzzle: p,
+                    entry: entry,
+                    onTap: () => context.push(
+                      Routes.solveFor(Uri.encodeComponent(p.id)),
+                    ),
+                  );
+                }),
+              ],
+
+              // Bottom padding so FAB doesn't overlap last row
+              const SizedBox(height: 88),
+            ],
+          );
+        },
       ),
     );
   }
@@ -216,30 +151,6 @@ class _ImportFAB extends ConsumerWidget {
   }
 }
 
-class _ColdStartBanner extends StatelessWidget {
-  const _ColdStartBanner();
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Text(
-        'Crosscue',
-        style: TextStyle(
-          fontSize: 24,
-          fontWeight: FontWeight.w700,
-          color: const Color(0xFF0A2A6E),
-          shadows: [
-            Shadow(
-              color: Theme.of(context).colorScheme.surface,
-              blurRadius: 8,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
 // ---------------------------------------------------------------------------
 // Section header
 // ---------------------------------------------------------------------------
@@ -262,7 +173,7 @@ class _SectionHeader extends StatelessWidget {
         style: TextStyle(
           fontSize: 11,
           fontWeight: FontWeight.w600,
-          color: _onSurface3(context),
+          color: context.crosscueOnSurface3,
           letterSpacing: 1.0,
           height: 1.2,
         ),
@@ -312,7 +223,7 @@ class _FeaturedPuzzle extends StatelessWidget {
             style: TextStyle(
               fontSize: CrosscueTypography.puzzleTitle,
               fontWeight: FontWeight.w600,
-              color: _onSurface1(context),
+              color: context.crosscueOnSurface1,
               height: 1.25,
             ),
           ),
@@ -325,7 +236,7 @@ class _FeaturedPuzzle extends StatelessWidget {
                   sub,
                   style: TextStyle(
                     fontSize: CrosscueTypography.bodySmall,
-                    color: _onSurface2(context),
+                    color: context.crosscueOnSurface2,
                   ),
                 ),
               ),
@@ -340,7 +251,7 @@ class _FeaturedPuzzle extends StatelessWidget {
               puzzle.author,
               style: TextStyle(
                 fontSize: CrosscueTypography.label,
-                color: _onSurface3(context),
+                color: context.crosscueOnSurface3,
               ),
             ),
           ],
@@ -350,7 +261,7 @@ class _FeaturedPuzzle extends StatelessWidget {
               elapsedStr,
               style: TextStyle(
                 fontSize: CrosscueTypography.bodySmall,
-                color: _onSurface2(context),
+                color: context.crosscueOnSurface2,
               ),
             ),
           ],
@@ -407,7 +318,7 @@ class _PuzzleRow extends StatelessWidget {
     final statusIcon = _statusIcon(entry);
     final sub = _subtitle(entry, puzzle);
     final completionFraction = entry?.completionFraction ?? 0;
-    final onSurface3 = _onSurface3(context);
+    final onSurface3 = context.crosscueOnSurface3;
 
     return Column(
       children: [
@@ -438,7 +349,7 @@ class _PuzzleRow extends StatelessWidget {
                         style: TextStyle(
                           fontSize: CrosscueTypography.body,
                           fontWeight: FontWeight.w500,
-                          color: _onSurface1(context),
+                          color: context.crosscueOnSurface1,
                         ),
                       ),
                       if (sub != null)
@@ -476,16 +387,16 @@ class _PuzzleRow extends StatelessWidget {
           height: 1,
           indent: 50, // 16 screenH + 20 icon + 12 gap + 2 extra = 50 per spec
           endIndent: 0,
-          color: _divider(context),
+          color: context.crosscueDivider,
         ),
       ],
     );
   }
 
   Color _statusColor(BuildContext context, ArchiveEntry? e) {
-    if (e == null || e.isNotStarted) return _onSurface3(context);
+    if (e == null || e.isNotStarted) return context.crosscueOnSurface3;
     if (e.isCleanSolve) return CrosscueColors.primary;
-    if (e.isCompleted || e.isRevealed) return _correct(context);
+    if (e.isCompleted || e.isRevealed) return context.crosscueCorrect;
     return CrosscueColors.primaryMid; // in progress
   }
 
@@ -616,26 +527,3 @@ class _EmptyState extends StatelessWidget {
     );
   }
 }
-
-bool _isLight(BuildContext context) =>
-    Theme.of(context).brightness == Brightness.light;
-
-Color _onSurface1(BuildContext context) => _isLight(context)
-    ? CrosscueColors.onSurface1Light
-    : CrosscueColors.onSurface1Dark;
-
-Color _onSurface2(BuildContext context) => _isLight(context)
-    ? CrosscueColors.onSurface2Light
-    : CrosscueColors.onSurface2Dark;
-
-Color _onSurface3(BuildContext context) => _isLight(context)
-    ? CrosscueColors.onSurface3Light
-    : CrosscueColors.onSurface3Dark;
-
-Color _divider(BuildContext context) => _isLight(context)
-    ? CrosscueColors.dividerLight
-    : CrosscueColors.dividerDark;
-
-Color _correct(BuildContext context) => _isLight(context)
-    ? CrosscueColors.correctLight
-    : CrosscueColors.correctDark;
