@@ -41,8 +41,8 @@ Status key: 🐛 Bug · ✨ Enhancement · 💡 Idea · ✅ Done · ❌ Won't Fi
 | 21 | ✨ | Sources: row-tap opens centered modal, condense wording, remove trailing button | 2026-05-06 | Local Import routes directly to import; non-local source rows open compact centered dialogs with no trailing button |
 | 28 | ✨ | About: use centered dialog, match app icon exactly | 2026-05-06 | Replaced About bottom sheet with centered dialog using the launcher icon asset |
 | 30 | ✨ | Today page add button: context-aware routing + blue color | 2026-05-06 | Add button now uses primary blue and routes to local import until a downloader-capable source exists |
-| 32 | ✨ | "Crosscue" home header: centered, overlay banner, cold-start only | 2026-05-06 | Added a once-per-process slide-in overlay banner without AppBar layout shift |
-| 34 | ✨ | Today page: pie chart completion indicator next to puzzle size | 2026-05-06 | Added 18dp inline completion pies using latest session progress fraction |
+| 32 | ✨ | "Crosscue" home header: centered, overlay banner, cold-start only | 2026-05-06 | Superseded: cold-start banner removed; Today now lives in the AppBar title |
+| 34 | ✨ | Today page: pie chart completion indicator next to puzzle size | 2026-05-06 | Added 18dp inline completion pies using checked-correct/revealed clue progress |
 | 22 | ✨ | Replace "Future Downloads" with "Community Crosswords" + Crosshare source | 2026-05-06 | Replaced placeholder section with Crosshare candidate; downloads stay blocked pending content-rights review |
 | 23 | ✨ | Clue panel: scrollable numbered list, full-width dynamic keyboard, haptic scroll | 2026-05-06 | Clue lists now scroll independently in number order, fill available height, haptic on scroll, and commit selection on release |
 | 25 | ✨ | App icon: larger logo with thin margin inside circle | 2026-05-06 | Regenerated Android launcher icons with a larger crossword mark |
@@ -141,13 +141,9 @@ Preferred: remove entirely. If user testing shows loss of orientation, fall back
 **Type:** Enhancement
 **Reported:** 2026-05-06
 
-The "Crosscue" title currently renders as a standard `AppBar` title, causing layout shift when it appears/disappears. Replace with:
-
-- A `Stack` overlay at the top of `HomeScreen` — the banner sits above the content, not inside the layout flow
-- The banner slides down from off-screen on cold start, displays for ~2 seconds, then slides back up with a `SlideTransition`
-- After dismissal it is removed from the tree (`setState(() => _bannerVisible = false)`) so it takes no space
-- "Cold start only" = show once per process lifetime. Use a static `bool _hasShown = false` in `HomeScreen` state or a `ref.read` of a simple `keepAlive` boolean provider — no persistence needed (next app launch is a new process)
-- Text: centered, `24px w700`, navy `#0A2A6E`
+Historical note: this banner was implemented, then superseded by a later UX
+decision. The cold-start "Crosscue" overlay has been removed, and the Today page
+uses `Today` as the AppBar title like the other top-level tiles.
 
 **Key file:** `home_screen.dart`
 
@@ -183,14 +179,16 @@ Check `SolveScreen.didChangeAppLifecycleState` — currently handles `paused` an
 Inline a small circular progress indicator after the size label in the featured puzzle card and list rows on the Today/Home screen:
 
 - Size: `18dp` diameter
-- Proportion: `filledCells / totalWhiteCells` from the puzzle's latest session (0.0 if not started)
+- Proportion: checked-correct or revealed clues from the puzzle's latest session (0.0 if not started)
 - Colors: filled arc = `#1565C0` navy, track = `#E0E0E0` grey
 - Not started: empty circle (track only)
 - Complete: solid navy circle
 - Use a `CustomPainter` arc or Flutter's `CircularProgressIndicator` with `strokeWidth: 2.5` and `backgroundColor`
 - Positioned inline: `"15×15  [pie]"` with `4dp` gap between text and chart
 
-The `ArchiveRepositoryImpl.getArchiveEntries()` already loads session data alongside metadata — use `latestSession` to derive fill fraction without a new query.
+The `ArchiveRepositoryImpl.getArchiveEntries()` loads session progress alongside
+metadata and derives the fill fraction from locked clues only: a clue counts when
+every cell is correct and every cell is either checked-correct or revealed.
 
 **Key files:** `home_screen.dart`, optionally a new `_PieProgress` widget in `home/presentation/widgets/`
 

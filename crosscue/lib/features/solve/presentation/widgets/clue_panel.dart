@@ -15,11 +15,15 @@ class CluePanel extends StatelessWidget {
   const CluePanel({
     super.key,
     required this.solveState,
+    required this.activeClue,
+    required this.crossClue,
     required this.onClueTap,
     required this.hapticsEnabled,
   });
 
   final SolveState solveState;
+  final Clue? activeClue;
+  final Clue? crossClue;
   final ValueChanged<Clue> onClueTap;
   final bool hapticsEnabled;
 
@@ -44,8 +48,8 @@ class CluePanel extends StatelessWidget {
           child: _ClueColumn(
             header: 'Across',
             clues: acrossClues,
-            activeClue: solveState.activeClue,
-            crossClue: solveState.crossClue,
+            activeClue: activeClue,
+            crossClue: crossClue,
             xwTheme: xwTheme,
             hapticsEnabled: hapticsEnabled,
             onClueTap: onClueTap,
@@ -60,8 +64,8 @@ class CluePanel extends StatelessWidget {
           child: _ClueColumn(
             header: 'Down',
             clues: downClues,
-            activeClue: solveState.activeClue,
-            crossClue: solveState.crossClue,
+            activeClue: activeClue,
+            crossClue: crossClue,
             xwTheme: xwTheme,
             hapticsEnabled: hapticsEnabled,
             onClueTap: onClueTap,
@@ -75,6 +79,7 @@ class CluePanel extends StatelessWidget {
 const double _kHeaderH = 28.0;
 const double _kRowPadH = 10.0;
 const double _kRowH = 42.0;
+const int _kVirtualLoopCount = 500;
 
 class _ClueColumn extends StatefulWidget {
   const _ClueColumn({
@@ -118,10 +123,14 @@ class _ClueColumnState extends State<_ClueColumn> {
   @override
   void didUpdateWidget(covariant _ClueColumn oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (!_userScrolling && !_sameClue(_previewClue, _selectedClue)) {
-      _previewClue = _selectedClue;
+    final selectedClue = _selectedClueFor(widget);
+    final selectionChanged =
+        !_sameClue(_selectedClueFor(oldWidget), selectedClue);
+    if (!_userScrolling &&
+        (selectionChanged || !_sameClue(_previewClue, selectedClue))) {
+      _previewClue = selectedClue;
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) _scrollToSelected();
+        if (mounted) _scrollToClue(selectedClue);
       });
     }
   }
@@ -156,28 +165,37 @@ class _ClueColumnState extends State<_ClueColumn> {
           ),
         ),
         Expanded(
-          child: NotificationListener<ScrollNotification>(
-            onNotification: _onScrollNotification,
-            child: ListView.builder(
-              controller: _controller,
-              padding: EdgeInsets.zero,
-              itemExtent: _kRowH,
-              itemCount: widget.clues.length,
-              itemBuilder: (context, index) {
-                final clue = widget.clues[index];
-                return _ClueRow(
-                  clue: clue,
-                  activeClue: widget.activeClue,
-                  crossClue: widget.crossClue,
-                  previewClue: _previewClue,
-                  xwTheme: widget.xwTheme,
-                  onClueTap: (clue) {
-                    setState(() => _previewClue = clue);
-                    widget.onClueTap(clue);
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              final edgePadding = ((constraints.maxHeight - _kRowH) / 2).clamp(
+                0.0,
+                double.infinity,
+              );
+              return NotificationListener<ScrollNotification>(
+                onNotification: _onScrollNotification,
+                child: ListView.builder(
+                  controller: _controller,
+                  padding: EdgeInsets.symmetric(vertical: edgePadding),
+                  itemExtent: _kRowH,
+                  itemCount: widget.clues.isEmpty ? 0 : null,
+                  itemBuilder: (context, index) {
+                    final clue = widget.clues[_wrappedIndex(index)];
+                    return _ClueRow(
+                      clue: clue,
+                      activeClue: widget.activeClue,
+                      crossClue: widget.crossClue,
+                      previewClue: _userScrolling ? _previewClue : null,
+                      xwTheme: widget.xwTheme,
+                      onClueTap: (clue) {
+                        setState(() => _previewClue = clue);
+                        _scrollToClue(clue);
+                        widget.onClueTap(clue);
+                      },
+                    );
                   },
-                );
-              },
-            ),
+                ),
+              );
+            },
           ),
         ),
       ],
@@ -195,6 +213,7 @@ class _ClueColumnState extends State<_ClueColumn> {
         final clue = _previewClue;
         if (clue == null || !mounted) return;
         _userScrolling = false;
+        _scrollToClue(clue);
         widget.onClueTap(clue);
       });
     }
@@ -203,8 +222,7 @@ class _ClueColumnState extends State<_ClueColumn> {
 
   void _handleScroll() {
     if (!_controller.hasClients || widget.clues.isEmpty) return;
-    final index =
-        (_controller.offset / _kRowH).round().clamp(0, widget.clues.length - 1);
+    final index = _wrappedIndex((_controller.offset / _kRowH).round());
     final clue = widget.clues[index];
     if (_sameClue(clue, _previewClue)) return;
     setState(() => _previewClue = clue);
@@ -214,22 +232,31 @@ class _ClueColumnState extends State<_ClueColumn> {
   }
 
   Clue? get _selectedClue {
-    final columnDirection = widget.header.toLowerCase() == 'across'
+    return _selectedClueFor(widget);
+  }
+
+  Clue? _selectedClueFor(_ClueColumn column) {
+    final columnDirection = column.header.toLowerCase() == 'across'
         ? Direction.across
         : Direction.down;
-    if (widget.activeClue?.direction == columnDirection) {
-      return widget.activeClue;
+    if (column.activeClue?.direction == columnDirection) {
+      return column.activeClue;
     }
-    if (widget.crossClue?.direction == columnDirection) return widget.crossClue;
-    return widget.clues.isEmpty ? null : widget.clues.first;
+    if (column.crossClue?.direction == columnDirection) {
+      return column.crossClue;
+    }
+    return column.clues.isEmpty ? null : column.clues.first;
   }
 
   void _scrollToSelected({bool jump = false}) {
-    final clue = _selectedClue;
+    _scrollToClue(_selectedClue, jump: jump);
+  }
+
+  void _scrollToClue(Clue? clue, {bool jump = false}) {
     if (clue == null || !_controller.hasClients) return;
     final index = widget.clues.indexWhere((c) => _sameClue(c, clue));
     if (index < 0) return;
-    final offset = index * _kRowH;
+    final offset = _targetOffsetForClueIndex(index);
     if (jump) {
       _controller.jumpTo(offset);
     } else {
@@ -243,6 +270,39 @@ class _ClueColumnState extends State<_ClueColumn> {
 
   bool _sameClue(Clue? a, Clue? b) {
     return a?.number == b?.number && a?.direction == b?.direction;
+  }
+
+  int _wrappedIndex(int virtualIndex) {
+    final count = widget.clues.length;
+    if (count == 0) return 0;
+    return virtualIndex % count;
+  }
+
+  double _targetOffsetForClueIndex(int clueIndex) {
+    final count = widget.clues.length;
+    if (!_controller.hasClients || count == 0) return clueIndex * _kRowH;
+
+    var currentVirtualIndex = (_controller.offset / _kRowH).round();
+    if (currentVirtualIndex < count) {
+      currentVirtualIndex = count * _kVirtualLoopCount;
+    }
+
+    final currentWrappedIndex = _wrappedIndex(currentVirtualIndex);
+    var targetVirtualIndex =
+        currentVirtualIndex - currentWrappedIndex + clueIndex;
+
+    final previousLoopIndex = targetVirtualIndex - count;
+    final nextLoopIndex = targetVirtualIndex + count;
+    if ((previousLoopIndex - currentVirtualIndex).abs() <
+        (targetVirtualIndex - currentVirtualIndex).abs()) {
+      targetVirtualIndex = previousLoopIndex;
+    }
+    if ((nextLoopIndex - currentVirtualIndex).abs() <
+        (targetVirtualIndex - currentVirtualIndex).abs()) {
+      targetVirtualIndex = nextLoopIndex;
+    }
+
+    return targetVirtualIndex * _kRowH;
   }
 }
 

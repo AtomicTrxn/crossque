@@ -9,6 +9,7 @@ import 'package:crosscue/core/theme/crossword_theme.dart';
 import 'package:crosscue/core/domain/models/clue.dart';
 import 'package:crosscue/core/domain/models/enums.dart';
 import 'package:crosscue/features/settings/presentation/providers/settings_providers.dart';
+import 'package:crosscue/features/solve/domain/models/focus_position.dart';
 import 'package:crosscue/features/solve/presentation/notifiers/solve_notifier.dart';
 import 'package:crosscue/features/solve/presentation/notifiers/solve_state.dart';
 import 'crossword_grid_painter.dart';
@@ -25,10 +26,12 @@ class CrosswordGrid extends ConsumerStatefulWidget {
     super.key,
     required this.puzzleId,
     required this.solveState,
+    this.onGridFocusSelected,
   });
 
   final String puzzleId;
   final SolveState solveState;
+  final ValueChanged<FocusPosition>? onGridFocusSelected;
 
   @override
   ConsumerState<CrosswordGrid> createState() => _CrosswordGridState();
@@ -105,7 +108,9 @@ class _CrosswordGridState extends ConsumerState<CrosswordGrid>
     }
 
     if (_hapticsOn) HapticFeedback.selectionClick();
-    ref.read(solveProvider(widget.puzzleId).notifier).tapCell(row, col);
+    final focus =
+        ref.read(solveProvider(widget.puzzleId).notifier).tapCell(row, col);
+    if (focus != null) widget.onGridFocusSelected?.call(focus);
     _requestFocus();
   }
 
@@ -124,7 +129,9 @@ class _CrosswordGridState extends ConsumerState<CrosswordGrid>
     if (_hapticsOn) HapticFeedback.mediumImpact();
 
     // Focus the tapped cell first
-    ref.read(solveProvider(widget.puzzleId).notifier).tapCell(row, col);
+    final focus =
+        ref.read(solveProvider(widget.puzzleId).notifier).tapCell(row, col);
+    if (focus != null) widget.onGridFocusSelected?.call(focus);
     _requestFocus();
 
     // Show contextual menu near the long-press location

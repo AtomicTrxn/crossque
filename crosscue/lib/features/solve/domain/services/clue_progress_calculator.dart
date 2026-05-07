@@ -1,0 +1,69 @@
+import 'package:crosscue/core/domain/models/clue.dart';
+import 'package:crosscue/core/domain/models/enums.dart';
+import 'package:crosscue/core/domain/models/grid.dart';
+import 'package:crosscue/core/domain/models/puzzle.dart';
+import 'package:crosscue/features/solve/domain/models/cell_progress.dart';
+
+/// Pure helpers for deriving clue-level solve progress from cell progress.
+class ClueProgressCalculator {
+  const ClueProgressCalculator._();
+
+  static List<(int row, int col)> cellsFor(Clue clue) => [
+        for (var i = 0; i < clue.length; i++)
+          clue.direction == Direction.across
+              ? (clue.startRow, clue.startCol + i)
+              : (clue.startRow + i, clue.startCol),
+      ];
+
+  static bool isClueCorrect({
+    required Puzzle puzzle,
+    required Grid<CellProgress> progress,
+    required Clue clue,
+  }) {
+    for (final (row, col) in cellsFor(clue)) {
+      final cellProgress = progress.cell(row, col);
+      final solution = puzzle.grid.cell(row, col).solution;
+      if (cellProgress.letter.isEmpty ||
+          cellProgress.letter.toUpperCase() != solution.toUpperCase()) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  static bool isClueLockedCorrect({
+    required Puzzle puzzle,
+    required Grid<CellProgress> progress,
+    required Clue clue,
+  }) {
+    for (final (row, col) in cellsFor(clue)) {
+      final cellProgress = progress.cell(row, col);
+      final solution = puzzle.grid.cell(row, col).solution;
+      final isLocked = cellProgress.state == CellState.checkedCorrect ||
+          cellProgress.state == CellState.revealed;
+      if (!isLocked ||
+          cellProgress.letter.isEmpty ||
+          cellProgress.letter.toUpperCase() != solution.toUpperCase()) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  static double lockedClueCompletionFraction({
+    required Puzzle puzzle,
+    required Grid<CellProgress> progress,
+  }) {
+    final clues = puzzle.clues;
+    if (clues.isEmpty) return 0;
+
+    final lockedCorrect = clues.where(
+      (clue) => isClueLockedCorrect(
+        puzzle: puzzle,
+        progress: progress,
+        clue: clue,
+      ),
+    );
+    return (lockedCorrect.length / clues.length).clamp(0.0, 1.0);
+  }
+}

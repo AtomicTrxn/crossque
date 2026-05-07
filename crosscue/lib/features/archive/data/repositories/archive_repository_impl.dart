@@ -1,9 +1,13 @@
 import 'package:crosscue/core/domain/models/puzzle_metadata.dart';
 import 'package:crosscue/core/database/app_database.dart';
+import 'package:crosscue/core/domain/models/enums.dart';
+import 'package:crosscue/core/domain/models/grid.dart';
 import 'package:crosscue/features/import/data/daos/puzzle_dao.dart';
 import 'package:crosscue/features/solve/data/daos/solve_session_dao.dart';
 import 'package:crosscue/features/archive/domain/models/archive_entry.dart';
 import 'package:crosscue/features/archive/domain/repositories/archive_repository.dart';
+import 'package:crosscue/features/solve/domain/models/cell_progress.dart';
+import 'package:crosscue/features/solve/domain/services/clue_progress_calculator.dart';
 
 /// Provides the Archive screen's data by combining [PuzzleDao] metadata with
 /// the latest [SolveSessionRow] for each puzzle.
@@ -101,18 +105,42 @@ class ArchiveRepositoryImpl implements ArchiveRepository {
     final puzzle = await puzzleDao.getPuzzle(puzzleId);
     if (puzzle == null) return 0;
 
-    var whiteCells = 0;
-    for (var row = 0; row < puzzle.height; row++) {
-      for (var col = 0; col < puzzle.width; col++) {
-        if (!puzzle.grid.cell(row, col).isBlack) whiteCells++;
-      }
-    }
-    if (whiteCells == 0) return 0;
-
     final progressRows = await sessionDao.loadCellProgress(session.id);
-    final filled = progressRows
-        .where((row) => row.guess != null && row.guess!.isNotEmpty)
-        .length;
-    return (filled / whiteCells).clamp(0.0, 1.0);
+    final progress = _progressGridFromRows(
+      width: puzzle.width,
+      height: puzzle.height,
+      rows: progressRows,
+    );
+
+    return ClueProgressCalculator.lockedClueCompletionFraction(
+      puzzle: puzzle,
+      progress: progress,
+    );
+  }
+
+  Grid<CellProgress> _progressGridFromRows({
+    required int width,
+    required int height,
+    required List<CellProgressRow> rows,
+  }) {
+    final rowsByCell = {
+      for (final row in rows) (row.row, row.col): row,
+    };
+    return Grid<CellProgress>.generate(width, height, (row, col) {
+      final progressRow = rowsByCell[(row, col)];
+      if (progressRow == null) return CellProgress.blank;
+      return CellProgress(
+        letter: progressRow.guess ?? '',
+        state: _cellStateFromDb(progressRow.state),
+        isPencil: progressRow.isPencil,
+      );
+    });
+  }
+
+  CellState _cellStateFromDb(String value) {
+    for (final state in CellState.values) {
+      if (state.name == value) return state;
+    }
+    return CellState.empty;
   }
 }
