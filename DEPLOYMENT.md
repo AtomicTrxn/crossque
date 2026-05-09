@@ -286,6 +286,45 @@ This builds both the APK and a signed AAB, attaches the APK to the GitHub Releas
 
 ---
 
+## Play Store Submission Checklist
+
+Complete these steps before submitting to Google Play for the first time.
+Human review is required before publishing — this is not legal advice.
+
+### Privacy policy (required before submission)
+- [ ] Publish a privacy policy at a stable public URL (e.g. `raptortech.com/crosscue/privacy` or GitHub Pages)
+- [ ] Confirm crash reporter vendor (Sentry vs. Firebase Crashlytics) and insert correct name + privacy policy link
+- [ ] Add the privacy policy URL to Play Console → Store Presence → App Content → Privacy Policy
+- [ ] Add an "About / Privacy Policy" link in app Settings
+
+### Play Console — Data Safety form
+Crosscue Phase 1 answers:
+
+| Question | Answer |
+|----------|--------|
+| Data collected? | Yes (crash reports + optional feedback) |
+| Data types | App activity (crash/error info), app info (version, device model) |
+| Shared with third parties? | Yes (crash reporter) |
+| Encrypted in transit? | Yes |
+| Users can request deletion? | Yes |
+| Required for core function? | No (crash reporting is opt-in) |
+
+### App content & targeting
+- [ ] Confirm app is **not** targeted at children under 13 in the store listing
+- [ ] Complete Play Console → App Content → Target Audience
+- [ ] Set `android:hasFragileUserData="true"` in `AndroidManifest.xml` if supporting data deletion on uninstall prompt (Android 10+)
+
+### Release
+- [ ] Add `PLAY_SERVICE_ACCOUNT_JSON` GitHub Secret (Google Cloud service account with Release Manager role)
+- [ ] Uncomment the Play Store upload step in `.github/workflows/release.yml`
+- [ ] Use `workflow_dispatch` with `play_store: true` to trigger the first AAB upload to the internal track
+
+### Post-launch updates required if scope changes
+- Re-review and update privacy policy + Data Safety form before adding analytics, notifications, or any new data collection
+- GDPR/UK GDPR review required before EU/UK distribution (crash reporter DPA may be needed)
+
+---
+
 ## Debugging Runbook
 
 ### App shows error screen ("Could not load puzzle")

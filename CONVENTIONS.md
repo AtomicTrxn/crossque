@@ -343,6 +343,54 @@ if (row < 0 || row >= puzzle.height || col < 0 || col >= puzzle.width) return;
 
 ---
 
+## Puzzle Sources — Legal Guardrail
+
+> **Read this before writing any code that fetches, downloads, caches, or automates access to external puzzle content.**
+
+Free-to-play does not mean free-to-republish. A puzzle can be publicly playable in a browser while still being protected by copyright, ToS anti-scraping clauses, and syndication contracts.
+
+| Source | Registry status | Rule |
+|--------|-----------------|------|
+| Local `.puz` / `.ipuz` import | `userImport` | Safe — user supplies the file |
+| Indie/static feeds with explicit license | `openLicense` / `explicitPermission` | Safe only when constructor/site grants download + cache + display rights in writing |
+| Crosshare daily mini | `needsReview` | Technical path exists (`/api/puz/{id}`); blocked pending human legal review |
+| Universal / Andrews McMeel | `needsReview` | Do not scrape — contact AMU for syndication/license |
+| LA Times | `needsReview` | Do not scrape/cache — terms prohibit archiving without permission |
+| Guardian | `needsReview` | Do not scrape — Open Platform API scope must be confirmed |
+| Wordplays / aggregators | `prohibited` | No reliable rights chain |
+| NYT | `prohibited` | Do not implement |
+
+`needsReview` means "track the candidate, do not enable it." A source can only move to `explicitPermission` after human legal/business review.
+
+### Source legal review checklist
+
+Use this before registering or enabling any new online source:
+
+**Permission**
+- [ ] License or terms URL reviewed
+- [ ] License status: `openLicense` / `explicitPermission` / `needsReview` / `prohibited`
+- [ ] Commercial use allowed
+- [ ] Attribution required (and required text recorded)
+
+**Fetching & cache policy**
+- [ ] Official API or feed URL confirmed
+- [ ] `robots.txt` reviewed
+- [ ] Automated fetching allowed
+- [ ] Puzzle body caching allowed; cache duration defined
+- [ ] Raw payload retention allowed
+
+**Content handling**
+- [ ] Title / author / copyright metadata available
+- [ ] Offline play allowed
+- [ ] Redistribution allowed
+
+**Decision**
+- [ ] Approved for `SourceRegistry` registration
+- [ ] Approved for runtime enablement
+- [ ] Required `LicenseStatus` set
+
+---
+
 ## Commit Style
 
 ```
