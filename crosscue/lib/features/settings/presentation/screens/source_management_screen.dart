@@ -6,6 +6,7 @@ import 'package:crosscue/core/domain/models/enums.dart';
 import 'package:crosscue/core/routing/routes.dart';
 import 'package:crosscue/core/theme/design_tokens.dart';
 import 'package:crosscue/features/import/domain/repositories/puzzle_source.dart';
+import 'package:crosscue/features/import/presentation/notifiers/crosshare_notifier.dart';
 import 'package:crosscue/features/import/presentation/providers/source_registry_provider.dart';
 
 class SourceManagementScreen extends ConsumerWidget {
@@ -35,7 +36,11 @@ class SourceManagementScreen extends ConsumerWidget {
             for (final source in localSources) _SourceTile(source: source),
           const Divider(),
           const _SectionHeader('Community Crosswords'),
-          for (final source in communitySources) _SourceTile(source: source),
+          for (final source in communitySources)
+            if (source.id == 'crosshare_daily_mini')
+              const _CrosshareSourceTile()
+            else
+              _SourceTile(source: source),
           ListTile(
             leading: const Icon(Icons.fact_check_outlined),
             title: const Text('Source review checklist'),
@@ -84,6 +89,74 @@ class SourceManagementScreen extends ConsumerWidget {
     );
   }
 }
+
+// ---------------------------------------------------------------------------
+// Crosshare source tile — shows live download state
+// ---------------------------------------------------------------------------
+
+class _CrosshareSourceTile extends ConsumerWidget {
+  const _CrosshareSourceTile();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final dlState = ref.watch(crosshareProvider);
+    final colorScheme = Theme.of(context).colorScheme;
+
+    ref.listen<CrosshareState>(crosshareProvider, (_, next) {
+      if (next is CrosshareSuccess) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Downloaded: ${next.title}')),
+        );
+        context.pop();
+      }
+    });
+
+    final isDownloading = dlState is CrosshareDownloading;
+
+    return ListTile(
+      leading: Icon(
+        Icons.check_circle_outline,
+        color: colorScheme.primary,
+      ),
+      title: const Text('Crosshare Daily Mini'),
+      subtitle: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text('Free community crosswords · crosshare.org'),
+          if (dlState is CrosshareFailure) ...[
+            const SizedBox(height: 4),
+            Text(
+              dlState.message,
+              style: TextStyle(color: colorScheme.error, fontSize: 12),
+            ),
+          ],
+          if (dlState is CrosshareDuplicate) ...[
+            const SizedBox(height: 4),
+            const Text(
+              "Today's puzzle is already in your library.",
+              style: TextStyle(fontSize: 12),
+            ),
+          ],
+        ],
+      ),
+      trailing: isDownloading
+          ? const SizedBox(
+              width: 20,
+              height: 20,
+              child: CircularProgressIndicator(strokeWidth: 2),
+            )
+          : FilledButton(
+              onPressed: () => ref.read(crosshareProvider.notifier).download(),
+              child: const Text('Get today'),
+            ),
+      isThreeLine: dlState is CrosshareFailure || dlState is CrosshareDuplicate,
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Generic source tile
+// ---------------------------------------------------------------------------
 
 class _SourceTile extends StatelessWidget {
   final PuzzleSource source;

@@ -8,6 +8,51 @@ part of 'core_providers.dart';
 
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // ignore_for_file: type=lint, type=warning
+/// Shared [Dio] HTTP client for all network sources.
+
+@ProviderFor(dio)
+final dioProvider = DioProvider._();
+
+/// Shared [Dio] HTTP client for all network sources.
+
+final class DioProvider extends $FunctionalProvider<Dio, Dio, Dio>
+    with $Provider<Dio> {
+  /// Shared [Dio] HTTP client for all network sources.
+  DioProvider._()
+      : super(
+          from: null,
+          argument: null,
+          retry: null,
+          name: r'dioProvider',
+          isAutoDispose: false,
+          dependencies: null,
+          $allTransitiveDependencies: null,
+        );
+
+  @override
+  String debugGetCreateSourceHash() => _$dioHash();
+
+  @$internal
+  @override
+  $ProviderElement<Dio> $createElement($ProviderPointer pointer) =>
+      $ProviderElement(pointer);
+
+  @override
+  Dio create(Ref ref) {
+    return dio(ref);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(Dio value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<Dio>(value),
+    );
+  }
+}
+
+String _$dioHash() => r'c566f5406b2dcd58da3b88d9795cdd125d7bd74e';
+
 /// The single shared [AppDatabase] instance for the app lifetime.
 
 @ProviderFor(appDatabase)

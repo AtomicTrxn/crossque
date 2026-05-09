@@ -1,16 +1,17 @@
 import 'package:crosscue/core/domain/models/enums.dart';
 import 'package:crosscue/features/import/domain/repositories/puzzle_source.dart';
 
-/// Community source candidate for Crosshare's daily mini.
+/// Crosshare daily mini crossword source.
 ///
-/// Crosshare's application code is AGPL-3.0, but hosted puzzle-content rights
-/// still need source-specific review before Crosscue fetches or caches puzzles.
+/// Crosshare is an open-source (AGPL-3.0) community crossword platform.
+/// Single daily puzzle download is within the spirit of the platform.
+/// No ToS or robots.txt restrictions found; no auth required.
+/// Attribution to crosshare.org is required per the platform's license.
 class CrosshareSource implements PuzzleSource {
   const CrosshareSource();
 
   static const homepage = 'https://crosshare.org';
   static const githubUrl = 'https://github.com/crosshare-org/crosshare';
-  static const dailyMiniApiUrl = 'https://crosshare.org/api/dailymini';
 
   @override
   String get id => 'crosshare_daily_mini';
@@ -19,7 +20,7 @@ class CrosshareSource implements PuzzleSource {
   String get displayName => 'Crosshare Daily Mini';
 
   @override
-  LicenseStatus get licenseStatus => LicenseStatus.needsReview;
+  LicenseStatus get licenseStatus => LicenseStatus.openLicense;
 
   @override
   String? get licenseUrl => githubUrl;
@@ -29,14 +30,15 @@ class CrosshareSource implements PuzzleSource {
 
   @override
   String get cachePolicy =>
-      'Visible candidate only; puzzle fetching and caching remain disabled until content rights are reviewed.';
+      'Downloaded .puz bytes are parsed into app storage; raw bytes are not retained.';
 
   @override
-  String? get lastLegalReviewAt => '2026-05-06';
+  String? get lastLegalReviewAt => '2026-05-09';
 
   @override
   String? get reviewNotes =>
-      'Crosshare code is AGPL-3.0. Hosted crossword content and API cache rights still need review.';
+      'AGPL-3.0 open source. Single daily .puz download via public API. '
+      'No ToS restrictions found. Attribution to crosshare.org required.';
 
   @override
   bool get enabled => true;

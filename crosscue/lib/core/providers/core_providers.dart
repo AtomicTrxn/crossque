@@ -1,3 +1,4 @@
+import 'package:dio/dio.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import 'package:crosscue/core/audio/sound_player.dart';
@@ -9,6 +10,15 @@ import 'package:crosscue/core/sync/sync_adapter.dart';
 import 'package:crosscue/core/telemetry/crash_reporter.dart';
 
 part 'core_providers.g.dart';
+
+/// Shared [Dio] HTTP client for all network sources.
+@Riverpod(keepAlive: true)
+Dio dio(Ref ref) => Dio(
+      BaseOptions(
+        connectTimeout: const Duration(seconds: 10),
+        receiveTimeout: const Duration(seconds: 15),
+      ),
+    );
 
 /// The single shared [AppDatabase] instance for the app lifetime.
 @Riverpod(keepAlive: true)
