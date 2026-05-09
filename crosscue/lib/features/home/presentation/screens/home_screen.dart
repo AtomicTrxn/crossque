@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import 'package:crosscue/core/domain/models/enums.dart';
 import 'package:crosscue/core/domain/models/puzzle_metadata.dart';
 import 'package:crosscue/core/routing/routes.dart';
 import 'package:crosscue/core/theme/design_tokens.dart';
@@ -147,7 +148,8 @@ class _ImportFAB extends ConsumerWidget {
   }
 
   bool _hasDownloader(PuzzleSource source) {
-    return false;
+    // Any enabled, legally-cleared non-local source can provide downloads.
+    return source.licenseStatus != LicenseStatus.userImport;
   }
 }
 

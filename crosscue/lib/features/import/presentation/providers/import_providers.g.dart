@@ -50,3 +50,47 @@ final class ImportRepositoryProvider extends $FunctionalProvider<
 }
 
 String _$importRepositoryHash() => r'a498a4c72975e8d4db20b59872feca4a758d4060';
+
+@ProviderFor(crosshareDownloader)
+final crosshareDownloaderProvider = CrosshareDownloaderProvider._();
+
+final class CrosshareDownloaderProvider extends $FunctionalProvider<
+    CrosshareDownloader,
+    CrosshareDownloader,
+    CrosshareDownloader> with $Provider<CrosshareDownloader> {
+  CrosshareDownloaderProvider._()
+      : super(
+          from: null,
+          argument: null,
+          retry: null,
+          name: r'crosshareDownloaderProvider',
+          isAutoDispose: false,
+          dependencies: null,
+          $allTransitiveDependencies: null,
+        );
+
+  @override
+  String debugGetCreateSourceHash() => _$crosshareDownloaderHash();
+
+  @$internal
+  @override
+  $ProviderElement<CrosshareDownloader> $createElement(
+          $ProviderPointer pointer) =>
+      $ProviderElement(pointer);
+
+  @override
+  CrosshareDownloader create(Ref ref) {
+    return crosshareDownloader(ref);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(CrosshareDownloader value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<CrosshareDownloader>(value),
+    );
+  }
+}
+
+String _$crosshareDownloaderHash() =>
+    r'8507b5090552ef0ef6029bb8d097fe642bc425db';
