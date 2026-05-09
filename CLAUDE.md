@@ -55,7 +55,7 @@ cd crosscue && flutter run -d <device-id>
 make install-hooks
 ```
 
-The pre-push hook runs `make ci` automatically when pushing to `main`. Feature branch pushes are unblocked — run `make ci` manually before opening a PR.
+**Always run `make ci` before pushing or opening a PR.** Individual targets (`make format`, `make test`, etc.) are for iterating on a specific failure only — they do not substitute for the full pipeline. The pre-push hook enforces `make ci` on pushes to `main`; on feature branches it does not fire, so `make ci` must be run manually.
 
 ---
 
