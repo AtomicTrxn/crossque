@@ -20,7 +20,7 @@ All puzzles, progress, and stats stay on your device. No account required. The a
 
 ## Status
 
-Core puzzle importing, solving, persistence, archive, stats, settings, and onboarding are complete. Active development continues — see [GitHub Issues](https://github.com/AtomicTrxn/crossque/issues) for planned work.
+Core puzzle importing, solving, persistence, archive, stats, settings, and onboarding are complete. Active development continues — see [GitHub Issues](https://github.com/AtomicTrxn/crosscue/issues) for planned work.
 
 **Phase 1: Android.** iOS is Phase 2.
 
