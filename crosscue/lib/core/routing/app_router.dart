@@ -52,18 +52,6 @@ GoRouter appRouter(Ref ref) {
         builder: (context, state) => const ImportScreen(),
       ),
       GoRoute(
-        path: Routes.sourceManagement,
-        builder: (context, state) => const SourceManagementScreen(),
-      ),
-      GoRoute(
-        path: Routes.crosshareSettings,
-        builder: (context, state) => const CrosshareSettingsScreen(),
-      ),
-      GoRoute(
-        path: Routes.privacySettings,
-        builder: (context, state) => const PrivacyScreen(),
-      ),
-      GoRoute(
         path: Routes.solve,
         builder: (context, state) {
           final puzzleId = state.pathParameters['puzzleId']!;
@@ -93,10 +81,28 @@ GoRouter appRouter(Ref ref) {
               builder: (context, state) => const StatsScreen(),
             ),
           ]),
+          // Settings branch with nested sub-pages
           StatefulShellBranch(routes: [
             GoRoute(
               path: Routes.settings,
               builder: (context, state) => const SettingsScreen(),
+              routes: [
+                GoRoute(
+                  path: 'sources',
+                  builder: (context, state) => const SourceManagementScreen(),
+                  routes: [
+                    GoRoute(
+                      path: 'crosshare',
+                      builder: (context, state) =>
+                          const CrosshareSettingsScreen(),
+                    ),
+                  ],
+                ),
+                GoRoute(
+                  path: 'privacy',
+                  builder: (context, state) => const PrivacyScreen(),
+                ),
+              ],
             ),
           ]),
         ],

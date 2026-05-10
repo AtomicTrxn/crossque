@@ -113,7 +113,7 @@ class SettingsScreen extends ConsumerWidget {
             leading: Icons.source_outlined,
             title: 'Puzzle Sources',
             subtitle: 'Import local files and manage sources',
-            onTap: () => context.push(Routes.sourceManagement),
+            onTap: () => context.push('sources'),
           ),
 
           // ── Privacy & Data ─────────────────────────────────────────────────
@@ -122,7 +122,7 @@ class SettingsScreen extends ConsumerWidget {
             leading: Icons.security_outlined,
             title: 'Privacy & Data',
             subtitle: 'Crash reporting, export, import and clear data',
-            onTap: () => context.push(Routes.privacySettings),
+            onTap: () => context.push('privacy'),
           ),
 
           // ── Help ───────────────────────────────────────────────────────────
