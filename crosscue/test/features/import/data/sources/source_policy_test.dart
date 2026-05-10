@@ -12,7 +12,7 @@ void main() {
       // storage accepted per legal review."
       //
       // This test ensures code and docs cannot drift:
-      final source = CrosshareSource();
+      const source = CrosshareSource();
 
       expect(
         source.licenseStatus,
