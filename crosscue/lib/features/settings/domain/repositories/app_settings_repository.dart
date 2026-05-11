@@ -1,5 +1,3 @@
-import 'package:flutter/material.dart';
-
 import 'package:crosscue/core/domain/models/enums.dart';
 
 /// Abstract interface for persisted user settings.
@@ -11,8 +9,8 @@ abstract interface class AppSettingsRepository {
   Future<bool> getHasSeenOnboarding();
   Future<void> setHasSeenOnboarding(bool value);
 
-  Future<ThemeMode> getThemeMode();
-  Future<void> setThemeMode(ThemeMode mode);
+  Future<AppThemeMode> getThemeMode();
+  Future<void> setThemeMode(AppThemeMode mode);
 
   Future<bool> getHapticsEnabled();
   Future<void> setHapticsEnabled(bool value);
@@ -36,7 +34,7 @@ abstract interface class AppSettingsRepository {
   Future<void> setCrashReporting(bool value);
 
   /// Whether to automatically download the Crosshare daily mini on launch/foreground.
-  /// Defaults to true when no value is stored.
+  /// Defaults to false when no value is stored — the user must explicitly opt in.
   Future<bool> getCrosshareAutoDownload();
   Future<void> setCrosshareAutoDownload(bool value);
 

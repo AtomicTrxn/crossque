@@ -2,6 +2,7 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import 'package:crosscue/features/import/data/downloaders/crosshare_downloader.dart';
 import 'package:crosscue/features/import/domain/models/import_job_result.dart';
+import 'package:crosscue/features/import/domain/repositories/import_repository.dart';
 import 'package:crosscue/features/import/presentation/providers/import_providers.dart';
 import 'package:crosscue/features/settings/domain/repositories/app_settings_repository.dart';
 import 'package:crosscue/features/settings/presentation/providers/settings_providers.dart';
@@ -27,14 +28,14 @@ class CrosshareAutoDownloadService {
   const CrosshareAutoDownloadService({
     required CrosshareDownloader downloader,
     required AppSettingsRepository settings,
-    required dynamic importRepo,
+    required ImportRepository importRepo,
   })  : _downloader = downloader,
         _settings = settings,
         _importRepo = importRepo;
 
   final CrosshareDownloader _downloader;
   final AppSettingsRepository _settings;
-  final dynamic _importRepo;
+  final ImportRepository _importRepo;
 
   /// Called on app launch and when the app returns to the foreground.
   /// Returns immediately (does nothing) if auto-download is off or already done
@@ -62,7 +63,10 @@ class CrosshareAutoDownloadService {
       return;
     }
 
-    final importResult = await _importRepo.importBytes(dlResult.value);
+    final importResult = await _importRepo.importBytes(
+      dlResult.value,
+      sourceId: 'crosshare_daily_mini',
+    );
     switch (importResult) {
       case JobSuccess():
         await _settings.setCrosshareLastDownloadedDate(today);

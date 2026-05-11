@@ -97,7 +97,7 @@ String _$hasSeenOnboardingHash() => r'6b6f4c7214866437766731a72259ee43661c1acb';
 final themeModeProvider = ThemeModeNotifierProvider._();
 
 final class ThemeModeNotifierProvider
-    extends $AsyncNotifierProvider<ThemeModeNotifier, ThemeMode> {
+    extends $AsyncNotifierProvider<ThemeModeNotifier, AppThemeMode> {
   ThemeModeNotifierProvider._()
       : super(
           from: null,
@@ -117,17 +117,17 @@ final class ThemeModeNotifierProvider
   ThemeModeNotifier create() => ThemeModeNotifier();
 }
 
-String _$themeModeNotifierHash() => r'5ae7518f6a9c8ee6de8b16585eebbd5995ddbc1c';
+String _$themeModeNotifierHash() => r'15dd2a93387a03d1c91ce420404902fc1a941bb3';
 
-abstract class _$ThemeModeNotifier extends $AsyncNotifier<ThemeMode> {
-  FutureOr<ThemeMode> build();
+abstract class _$ThemeModeNotifier extends $AsyncNotifier<AppThemeMode> {
+  FutureOr<AppThemeMode> build();
   @$mustCallSuper
   @override
   void runBuild() {
-    final ref = this.ref as $Ref<AsyncValue<ThemeMode>, ThemeMode>;
+    final ref = this.ref as $Ref<AsyncValue<AppThemeMode>, AppThemeMode>;
     final element = ref.element as $ClassProviderElement<
-        AnyNotifier<AsyncValue<ThemeMode>, ThemeMode>,
-        AsyncValue<ThemeMode>,
+        AnyNotifier<AsyncValue<AppThemeMode>, AppThemeMode>,
+        AsyncValue<AppThemeMode>,
         Object?,
         Object?>;
     element.handleCreate(ref, build);

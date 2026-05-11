@@ -10,5 +10,9 @@ abstract interface class PuzzleParser {
   bool canParse(Uint8List bytes);
 
   /// Parse [bytes] into a [Puzzle], or return a [ParseError].
-  Result<Puzzle, ParseError> parse(Uint8List bytes);
+  ///
+  /// [sourceId] identifies which source produced the bytes and is stored on
+  /// the resulting [PuzzleMetadata]. Defaults to `'local_import'`.
+  Result<Puzzle, ParseError> parse(Uint8List bytes,
+      {String sourceId = 'local_import'});
 }

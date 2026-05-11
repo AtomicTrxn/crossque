@@ -3,7 +3,6 @@ import 'dart:typed_data';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:flutter/material.dart';
 
 import 'package:crosscue/core/domain/models/clue.dart';
 import 'package:crosscue/core/domain/models/enums.dart';
@@ -196,7 +195,8 @@ final class _FakeImportRepository implements ImportRepository {
   Future<Puzzle?> getPuzzle(String id) async => id == puzzle.id ? puzzle : null;
 
   @override
-  Future<ImportJobResult> importBytes(Uint8List bytes) async =>
+  Future<ImportJobResult> importBytes(Uint8List bytes,
+          {String sourceId = 'local_import'}) async =>
       ImportJobResult.success(puzzle);
 }
 
@@ -291,7 +291,7 @@ final class _FakeAppSettingsRepository implements AppSettingsRepository {
   Future<bool> getStreakReminder() async => false;
 
   @override
-  Future<ThemeMode> getThemeMode() async => ThemeMode.system;
+  Future<AppThemeMode> getThemeMode() async => AppThemeMode.system;
 
   @override
   Future<void> setCrashReporting(bool value) async {}
@@ -318,7 +318,7 @@ final class _FakeAppSettingsRepository implements AppSettingsRepository {
   Future<void> setStreakReminder(bool value) async {}
 
   @override
-  Future<void> setThemeMode(ThemeMode mode) async {}
+  Future<void> setThemeMode(AppThemeMode mode) async {}
 
   @override
   Future<bool> getCrosshareAutoDownload() async => true;
