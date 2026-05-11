@@ -262,6 +262,7 @@ cd crosscue && flutter build apk --release --no-pub
 
 ```bash
 git checkout main && git pull
+# Bump pubspec.yaml version first, commit, push, then tag
 git tag v1.2.3
 git push origin v1.2.3
 ```
@@ -270,6 +271,8 @@ This triggers `.github/workflows/release.yml`, which:
 1. Runs full CI (format → analyze → test → generated → debug APK)
 2. Builds a signed release APK with version name `1.2.3` and version code `10203`
 3. Publishes a GitHub Release at `v1.2.3` with the APK attached and auto-generated release notes
+
+**Release title:** always the bare version number — `v1.2.3`. All context goes in the release body, not the title.
 
 **Version code formula:** `major × 10000 + minor × 100 + patch`
 - `v1.0.0` → `10000`
