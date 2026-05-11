@@ -1,4 +1,3 @@
-import 'package:flutter/material.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import 'package:crosscue/core/domain/models/enums.dart';
@@ -35,9 +34,9 @@ Future<bool> hasSeenOnboarding(Ref ref) =>
 @riverpod
 class ThemeModeNotifier extends _$ThemeModeNotifier {
   @override
-  Future<ThemeMode> build() => ref.read(appSettingsProvider).getThemeMode();
+  Future<AppThemeMode> build() => ref.read(appSettingsProvider).getThemeMode();
 
-  Future<void> setMode(ThemeMode mode) async {
+  Future<void> setMode(AppThemeMode mode) async {
     await ref.read(appSettingsProvider).setThemeMode(mode);
     state = AsyncData(mode);
   }

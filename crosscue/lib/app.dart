@@ -4,10 +4,17 @@ import 'package:dynamic_color/dynamic_color.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'core/domain/models/enums.dart';
 import 'core/providers/core_providers.dart';
 import 'core/routing/app_router.dart';
 import 'core/theme/app_theme.dart';
 import 'features/settings/presentation/providers/settings_providers.dart';
+
+ThemeMode _toFlutterThemeMode(AppThemeMode m) => switch (m) {
+      AppThemeMode.light => ThemeMode.light,
+      AppThemeMode.dark => ThemeMode.dark,
+      AppThemeMode.system => ThemeMode.system,
+    };
 
 /// Root application widget. Reads the router and theme mode from Riverpod
 /// and wraps MaterialApp.router with Material You dynamic color support.
@@ -47,7 +54,7 @@ class _CrosscueAppState extends ConsumerState<CrosscueApp> {
     final router = ref.watch(appRouterProvider);
     final themeModeAsync = ref.watch(themeModeProvider);
     final themeMode = themeModeAsync.when(
-      data: (m) => m,
+      data: (m) => _toFlutterThemeMode(m),
       loading: () => ThemeMode.system,
       error: (_, __) => ThemeMode.system,
     );

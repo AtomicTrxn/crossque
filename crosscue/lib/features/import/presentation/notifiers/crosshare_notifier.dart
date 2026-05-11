@@ -68,7 +68,10 @@ class CrosshareNotifier extends _$CrosshareNotifier {
 
     // Step 2: parse + persist via ImportRepository
     final repo = ref.read(importRepositoryProvider);
-    final importResult = await repo.importBytes(dlResult.value);
+    final importResult = await repo.importBytes(
+      dlResult.value,
+      sourceId: 'crosshare_daily_mini',
+    );
     final today = _todayString();
 
     switch (importResult) {

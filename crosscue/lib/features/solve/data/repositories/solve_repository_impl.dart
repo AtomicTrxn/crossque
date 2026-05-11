@@ -1,5 +1,6 @@
 import 'package:intl/intl.dart';
 
+import 'package:crosscue/core/database/app_database.dart';
 import 'package:crosscue/features/solve/domain/models/cell_progress.dart';
 import 'package:crosscue/core/domain/models/enums.dart';
 import 'package:crosscue/features/solve/domain/models/focus_position.dart';
@@ -169,10 +170,13 @@ class SolveRepositoryImpl implements SolveRepository {
 
   /// Builds a full [Grid<CellProgress>] from raw DB rows, defaulting missing
   /// cells to [CellProgress.blank].
-  Grid<CellProgress> _buildProgressGrid(Puzzle puzzle, List<dynamic> rows) {
-    final map = <(int, int), dynamic>{};
+  Grid<CellProgress> _buildProgressGrid(
+    Puzzle puzzle,
+    List<CellProgressRow> rows,
+  ) {
+    final map = <(int, int), CellProgressRow>{};
     for (final row in rows) {
-      map[(row.row as int, row.col as int)] = row;
+      map[(row.row, row.col)] = row;
     }
 
     return Grid<CellProgress>.generate(
@@ -181,10 +185,9 @@ class SolveRepositoryImpl implements SolveRepository {
       (r, c) {
         final row = map[(r, c)];
         if (row == null) return CellProgress.blank;
-        final letter = (row.guess as String?) ?? '';
-        final state =
-            CellState.values.byName((row.state as String?) ?? 'empty');
-        final isPencil = (row.isPencil as bool?) ?? false;
+        final letter = row.guess ?? '';
+        final state = CellState.values.byName(row.state);
+        final isPencil = row.isPencil;
         return CellProgress(letter: letter, state: state, isPencil: isPencil);
       },
     );

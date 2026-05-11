@@ -1,5 +1,3 @@
-import 'package:flutter/material.dart';
-
 import 'package:crosscue/core/domain/models/enums.dart';
 import 'package:crosscue/features/settings/domain/repositories/app_settings_repository.dart';
 import 'package:crosscue/features/settings/data/daos/app_settings_dao.dart';
@@ -48,17 +46,17 @@ class AppSettingsRepositoryImpl implements AppSettingsRepository {
   // ---------------------------------------------------------------------------
 
   @override
-  Future<ThemeMode> getThemeMode() async {
+  Future<AppThemeMode> getThemeMode() async {
     final v = await dao.getValue(_keyThemeMode);
     return switch (v) {
-      'light' => ThemeMode.light,
-      'dark' => ThemeMode.dark,
-      _ => ThemeMode.system,
+      'light' => AppThemeMode.light,
+      'dark' => AppThemeMode.dark,
+      _ => AppThemeMode.system,
     };
   }
 
   @override
-  Future<void> setThemeMode(ThemeMode mode) =>
+  Future<void> setThemeMode(AppThemeMode mode) =>
       dao.setValue(_keyThemeMode, mode.name);
 
   // ---------------------------------------------------------------------------
@@ -130,8 +128,8 @@ class AppSettingsRepositoryImpl implements AppSettingsRepository {
   @override
   Future<bool> getCrosshareAutoDownload() async {
     final v = await dao.getValue(_keyCrosshareAutoDownload);
-    if (v == null) return true; // Default: enabled
-    return v != 'false';
+    if (v == null) return false; // Default: disabled (opt-in)
+    return v == 'true';
   }
 
   @override

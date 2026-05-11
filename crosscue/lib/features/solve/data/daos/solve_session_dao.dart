@@ -103,8 +103,11 @@ class SolveSessionDao extends DatabaseAccessor<AppDatabase>
   // Cell progress
   // ---------------------------------------------------------------------------
 
-  /// Bulk upsert of all non-empty cell-progress cells from [progress].
-  /// Skips cells that are still completely blank (optimises write size).
+  /// Replaces all cell-progress rows for [sessionId] with the current
+  /// non-blank cells from [progress].
+  ///
+  /// Uses delete-then-insert inside a transaction so that cells cleared by
+  /// backspace or reset do not leave orphan rows in the database.
   Future<void> saveCellProgress(
     int sessionId,
     Grid<CellProgress> progress,
@@ -130,10 +133,14 @@ class SolveSessionDao extends DatabaseAccessor<AppDatabase>
       }
     }
 
-    if (companions.isNotEmpty) {
-      await batch(
-          (b) => b.insertAllOnConflictUpdate(cellProgressTable, companions));
-    }
+    await transaction(() async {
+      await (delete(cellProgressTable)
+            ..where((t) => t.sessionId.equals(sessionId)))
+          .go();
+      if (companions.isNotEmpty) {
+        await batch((b) => b.insertAll(cellProgressTable, companions));
+      }
+    });
   }
 
   /// Loads all cell-progress rows for a session (used when resuming).
