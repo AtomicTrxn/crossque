@@ -23,7 +23,10 @@ class ImportRepositoryImpl implements ImportRepository {
   ///
   /// Returns [ImportJobResult] discriminating success / duplicate / failure.
   @override
-  Future<ImportJobResult> importBytes(Uint8List bytes) async {
+  Future<ImportJobResult> importBytes(
+    Uint8List bytes, {
+    String sourceId = 'local_import',
+  }) async {
     // Find a capable parser
     PuzzleParser? parser;
     for (final p in _parsers) {
@@ -37,7 +40,7 @@ class ImportRepositoryImpl implements ImportRepository {
     }
 
     // Parse
-    final result = parser.parse(bytes);
+    final result = parser.parse(bytes, sourceId: sourceId);
     if (result.isErr) return ImportJobResult.failure(result.error);
 
     final puzzle = result.value;

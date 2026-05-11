@@ -2,6 +2,12 @@
 // These are declared here (solve feature) because the solve feature is the
 // central domain for the app. Other features import from this file.
 
+/// Domain-layer theme preference — mirrors Flutter's ThemeMode without
+/// importing Flutter in the domain layer.
+///
+/// Translated to/from [ThemeMode] inside [AppSettingsRepositoryImpl].
+enum AppThemeMode { light, dark, system }
+
 /// Clue direction.
 enum Direction { across, down }
 

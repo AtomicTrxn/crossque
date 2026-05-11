@@ -17,7 +17,7 @@ class SettingsScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final themeMode = _value(
       ref.watch(themeModeProvider),
-      fallback: ThemeMode.system,
+      fallback: AppThemeMode.system,
     );
 
     return Scaffold(
@@ -39,20 +39,20 @@ class SettingsScreen extends ConsumerWidget {
               children: [
                 Text('Theme', style: Theme.of(context).textTheme.labelLarge),
                 const SizedBox(height: 8),
-                SegmentedButton<ThemeMode>(
+                SegmentedButton<AppThemeMode>(
                   segments: const [
                     ButtonSegment(
-                      value: ThemeMode.light,
+                      value: AppThemeMode.light,
                       icon: Icon(Icons.light_mode_outlined),
                       label: Text('Light'),
                     ),
                     ButtonSegment(
-                      value: ThemeMode.system,
+                      value: AppThemeMode.system,
                       icon: Icon(Icons.brightness_auto_outlined),
                       label: Text('System'),
                     ),
                     ButtonSegment(
-                      value: ThemeMode.dark,
+                      value: AppThemeMode.dark,
                       icon: Icon(Icons.dark_mode_outlined),
                       label: Text('Dark'),
                     ),
