@@ -1,4 +1,3 @@
-import 'package:crosscue/core/routing/back_to_today_scope.dart';
 import 'package:crosscue/core/routing/routes.dart';
 import 'package:crosscue/core/theme/design_tokens.dart';
 import 'package:crosscue/core/theme/theme_colors.dart';
@@ -38,49 +37,47 @@ class _ArchiveScreenState extends ConsumerState<ArchiveScreen> {
   Widget build(BuildContext context) {
     final archiveAsync = ref.watch(archiveEntriesProvider);
 
-    return BackToTodayScope(
-      child: Scaffold(
-        appBar: AppBar(title: const Text('Archive')),
-        body: archiveAsync.when(
-          loading: () => const Center(child: CircularProgressIndicator()),
-          error: (e, _) => Center(child: Text('Error: $e')),
-          data: (entries) {
-            if (entries.isEmpty) return const _EmptyArchive();
+    return Scaffold(
+      appBar: AppBar(title: const Text('Archive')),
+      body: archiveAsync.when(
+        loading: () => const Center(child: CircularProgressIndicator()),
+        error: (e, _) => Center(child: Text('Error: $e')),
+        data: (entries) {
+          if (entries.isEmpty) return const _EmptyArchive();
 
-            final filtered = _applyFilter(entries, _filter);
-            final sorted = _applySort(filtered, _sort);
+          final filtered = _applyFilter(entries, _filter);
+          final sorted = _applySort(filtered, _sort);
 
-            return Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Filter chips
-                _FilterChips(
-                  current: _filter,
-                  onSelected: (f) => setState(() => _filter = f),
-                ),
-                // Sort bar
-                _SortBar(
-                  count: filtered.length,
-                  sort: _sort,
-                  onSort: (s) => setState(() => _sort = s),
-                ),
-                // List
-                Expanded(
-                  child: sorted.isEmpty
-                      ? const _EmptyFilter()
-                      : ListView.builder(
-                          padding: EdgeInsets.zero,
-                          itemCount: sorted.length,
-                          itemBuilder: (ctx, i) => _ArchiveRow(
-                            entry: sorted[i],
-                            onDelete: () => _confirmDelete(ctx, sorted[i]),
-                          ),
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Filter chips
+              _FilterChips(
+                current: _filter,
+                onSelected: (f) => setState(() => _filter = f),
+              ),
+              // Sort bar
+              _SortBar(
+                count: filtered.length,
+                sort: _sort,
+                onSort: (s) => setState(() => _sort = s),
+              ),
+              // List
+              Expanded(
+                child: sorted.isEmpty
+                    ? const _EmptyFilter()
+                    : ListView.builder(
+                        padding: EdgeInsets.zero,
+                        itemCount: sorted.length,
+                        itemBuilder: (ctx, i) => _ArchiveRow(
+                          entry: sorted[i],
+                          onDelete: () => _confirmDelete(ctx, sorted[i]),
                         ),
-                ),
-              ],
-            );
-          },
-        ),
+                      ),
+              ),
+            ],
+          );
+        },
       ),
     );
   }

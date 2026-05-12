@@ -1,6 +1,5 @@
 import 'package:crosscue/core/domain/models/enums.dart';
 import 'package:crosscue/core/providers/core_providers.dart';
-import 'package:crosscue/core/routing/back_to_today_scope.dart';
 import 'package:crosscue/core/routing/routes.dart';
 import 'package:crosscue/core/theme/design_tokens.dart';
 import 'package:crosscue/features/settings/presentation/providers/settings_providers.dart';
@@ -25,138 +24,135 @@ class SettingsScreen extends ConsumerWidget {
           error: (_, __) => null,
         );
 
-    return BackToTodayScope(
-      child: Scaffold(
-        appBar: AppBar(title: const Text('Settings')),
-        body: ListView(
-          padding: const EdgeInsets.only(bottom: 24),
-          children: [
-            // ── Appearance ─────────────────────────────────────────────────────
-            const SettingsSectionHeader('Appearance'),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(
-                CrosscueSpacing.screenH,
-                8,
-                CrosscueSpacing.screenH,
-                12,
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text('Theme', style: Theme.of(context).textTheme.labelLarge),
-                  const SizedBox(height: 8),
-                  SegmentedButton<AppThemeMode>(
-                    segments: const [
-                      ButtonSegment(
-                        value: AppThemeMode.light,
-                        icon: Icon(Icons.light_mode_outlined),
-                        label: Text('Light'),
-                      ),
-                      ButtonSegment(
-                        value: AppThemeMode.system,
-                        icon: Icon(Icons.brightness_auto_outlined),
-                        label: Text('System'),
-                      ),
-                      ButtonSegment(
-                        value: AppThemeMode.dark,
-                        icon: Icon(Icons.dark_mode_outlined),
-                        label: Text('Dark'),
-                      ),
-                    ],
-                    selected: {themeMode},
-                    onSelectionChanged: (selection) {
-                      ref
-                          .read(themeModeProvider.notifier)
-                          .setMode(selection.first);
-                    },
-                  ),
-                ],
-              ),
+    return Scaffold(
+      appBar: AppBar(title: const Text('Settings')),
+      body: ListView(
+        padding: const EdgeInsets.only(bottom: 24),
+        children: [
+          // ── Appearance ─────────────────────────────────────────────────────
+          const SettingsSectionHeader('Appearance'),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(
+              CrosscueSpacing.screenH,
+              8,
+              CrosscueSpacing.screenH,
+              12,
             ),
-            const SettingsRowDivider(),
-            SettingsSwitchRow(
-              value: asyncSettingValue(
-                    ref.watch(colorblindModeProvider),
-                    fallback: ColorblindMode.none,
-                  ) !=
-                  ColorblindMode.none,
-              onChanged: (_) =>
-                  ref.read(colorblindModeProvider.notifier).toggle(),
-              leading: Icons.contrast_outlined,
-              title: 'Colorblind mode',
-              subtitle: 'Adds a dot to correct letters',
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('Theme', style: Theme.of(context).textTheme.labelLarge),
+                const SizedBox(height: 8),
+                SegmentedButton<AppThemeMode>(
+                  segments: const [
+                    ButtonSegment(
+                      value: AppThemeMode.light,
+                      icon: Icon(Icons.light_mode_outlined),
+                      label: Text('Light'),
+                    ),
+                    ButtonSegment(
+                      value: AppThemeMode.system,
+                      icon: Icon(Icons.brightness_auto_outlined),
+                      label: Text('System'),
+                    ),
+                    ButtonSegment(
+                      value: AppThemeMode.dark,
+                      icon: Icon(Icons.dark_mode_outlined),
+                      label: Text('Dark'),
+                    ),
+                  ],
+                  selected: {themeMode},
+                  onSelectionChanged: (selection) {
+                    ref
+                        .read(themeModeProvider.notifier)
+                        .setMode(selection.first);
+                  },
+                ),
+              ],
             ),
+          ),
+          const SettingsRowDivider(),
+          SettingsSwitchRow(
+            value: asyncSettingValue(
+                  ref.watch(colorblindModeProvider),
+                  fallback: ColorblindMode.none,
+                ) !=
+                ColorblindMode.none,
+            onChanged: (_) =>
+                ref.read(colorblindModeProvider.notifier).toggle(),
+            leading: Icons.contrast_outlined,
+            title: 'Colorblind mode',
+            subtitle: 'Adds a dot to correct letters',
+          ),
 
-            // ── Touch & Sound ──────────────────────────────────────────────────
-            const SettingsSectionHeader('Touch & Sound'),
-            SettingsSwitchRow(
-              value: asyncSettingValue(
-                ref.watch(hapticsEnabledProvider),
-                fallback: true,
-              ),
-              onChanged: (_) =>
-                  ref.read(hapticsEnabledProvider.notifier).toggle(),
-              leading: Icons.vibration_outlined,
-              title: 'Haptic feedback',
-              subtitle: 'Vibrate on cell tap and puzzle events',
+          // ── Touch & Sound ──────────────────────────────────────────────────
+          const SettingsSectionHeader('Touch & Sound'),
+          SettingsSwitchRow(
+            value: asyncSettingValue(
+              ref.watch(hapticsEnabledProvider),
+              fallback: true,
             ),
-            SettingsSwitchRow(
-              value: asyncSettingValue(
-                ref.watch(soundsEnabledProvider),
-                fallback: false,
-              ),
-              onChanged: (_) =>
-                  ref.read(soundsEnabledProvider.notifier).toggle(),
-              leading: Icons.volume_up_outlined,
-              title: 'Sounds',
-              subtitle: 'Play subtle feedback sounds',
+            onChanged: (_) =>
+                ref.read(hapticsEnabledProvider.notifier).toggle(),
+            leading: Icons.vibration_outlined,
+            title: 'Haptic feedback',
+            subtitle: 'Vibrate on cell tap and puzzle events',
+          ),
+          SettingsSwitchRow(
+            value: asyncSettingValue(
+              ref.watch(soundsEnabledProvider),
+              fallback: false,
             ),
-            SettingsSwitchRow(
-              value: asyncSettingValue(
-                ref.watch(skipFilledCellsProvider),
-                fallback: false,
-              ),
-              onChanged: (_) =>
-                  ref.read(skipFilledCellsProvider.notifier).toggle(),
-              leading: Icons.skip_next_outlined,
-              title: 'Skip filled cells',
-              subtitle: 'Jump over filled letters while typing',
+            onChanged: (_) => ref.read(soundsEnabledProvider.notifier).toggle(),
+            leading: Icons.volume_up_outlined,
+            title: 'Sounds',
+            subtitle: 'Play subtle feedback sounds',
+          ),
+          SettingsSwitchRow(
+            value: asyncSettingValue(
+              ref.watch(skipFilledCellsProvider),
+              fallback: false,
             ),
+            onChanged: (_) =>
+                ref.read(skipFilledCellsProvider.notifier).toggle(),
+            leading: Icons.skip_next_outlined,
+            title: 'Skip filled cells',
+            subtitle: 'Jump over filled letters while typing',
+          ),
 
-            // ── Puzzles ────────────────────────────────────────────────────────
-            const SettingsSectionHeader('Puzzles'),
-            SettingsNavRow(
-              leading: Icons.source_outlined,
-              title: 'Puzzle Sources',
-              subtitle: 'Import local files and manage sources',
-              onTap: () => context.push(Routes.sourceManagement),
-            ),
+          // ── Puzzles ────────────────────────────────────────────────────────
+          const SettingsSectionHeader('Puzzles'),
+          SettingsNavRow(
+            leading: Icons.source_outlined,
+            title: 'Puzzle Sources',
+            subtitle: 'Import local files and manage sources',
+            onTap: () => context.push(Routes.sourceManagement),
+          ),
 
-            // ── Privacy & Data ─────────────────────────────────────────────────
-            const SettingsSectionHeader('Privacy & Data'),
-            SettingsNavRow(
-              leading: Icons.security_outlined,
-              title: 'Privacy & Data',
-              subtitle: 'Crash reporting, export, import and clear data',
-              onTap: () => context.push(Routes.privacySettings),
-            ),
+          // ── Privacy & Data ─────────────────────────────────────────────────
+          const SettingsSectionHeader('Privacy & Data'),
+          SettingsNavRow(
+            leading: Icons.security_outlined,
+            title: 'Privacy & Data',
+            subtitle: 'Crash reporting, export, import and clear data',
+            onTap: () => context.push(Routes.privacySettings),
+          ),
 
-            // ── Help ───────────────────────────────────────────────────────────
-            const SettingsSectionHeader('Help'),
-            SettingsNavRow(
-              leading: Icons.help_outline,
-              title: 'How to play',
-              subtitle: 'Replay the onboarding walkthrough',
-              onTap: () => context.push(Routes.onboardingReplay),
-            ),
-            SettingsNavRow(
-              leading: Icons.info_outline,
-              title: 'About Crosscue',
-              subtitle: appVersion,
-              onTap: () => _showAboutDialog(context, appVersion),
-            ),
-          ],
-        ),
+          // ── Help ───────────────────────────────────────────────────────────
+          const SettingsSectionHeader('Help'),
+          SettingsNavRow(
+            leading: Icons.help_outline,
+            title: 'How to play',
+            subtitle: 'Replay the onboarding walkthrough',
+            onTap: () => context.push(Routes.onboardingReplay),
+          ),
+          SettingsNavRow(
+            leading: Icons.info_outline,
+            title: 'About Crosscue',
+            subtitle: appVersion,
+            onTap: () => _showAboutDialog(context, appVersion),
+          ),
+        ],
       ),
     );
   }

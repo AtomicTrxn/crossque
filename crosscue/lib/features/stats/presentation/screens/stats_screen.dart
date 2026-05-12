@@ -1,4 +1,3 @@
-import 'package:crosscue/core/routing/back_to_today_scope.dart';
 import 'package:crosscue/core/theme/design_tokens.dart';
 import 'package:crosscue/core/theme/theme_colors.dart';
 import 'package:crosscue/core/utils/time_format.dart';
@@ -14,16 +13,14 @@ class StatsScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final statsAsync = ref.watch(statsDataProvider);
 
-    return BackToTodayScope(
-      child: Scaffold(
-        appBar: AppBar(title: const Text('Stats')),
-        body: statsAsync.when(
-          loading: () => const Center(child: CircularProgressIndicator()),
-          error: (e, _) => Center(child: Text('Error: $e')),
-          data: (stats) => stats.startedCount == 0
-              ? const _EmptyStats()
-              : _StatsBody(stats: stats),
-        ),
+    return Scaffold(
+      appBar: AppBar(title: const Text('Stats')),
+      body: statsAsync.when(
+        loading: () => const Center(child: CircularProgressIndicator()),
+        error: (e, _) => Center(child: Text('Error: $e')),
+        data: (stats) => stats.startedCount == 0
+            ? const _EmptyStats()
+            : _StatsBody(stats: stats),
       ),
     );
   }
