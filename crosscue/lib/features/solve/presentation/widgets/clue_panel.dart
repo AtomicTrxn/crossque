@@ -83,7 +83,7 @@ class CluePanel extends StatelessWidget {
 
 const double _kHeaderH = 28.0;
 const double _kRowPadH = 10.0;
-const double _kRowH = 42.0;
+const double _kRowH = 52.0;
 const int _kVirtualLoopCount = 500;
 
 class _ClueColumn extends StatefulWidget {

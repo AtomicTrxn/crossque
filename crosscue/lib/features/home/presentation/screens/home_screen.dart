@@ -64,9 +64,7 @@ class HomeScreen extends ConsumerWidget {
         error: (e, _) => Center(child: Text('Error: $e')),
         data: (puzzles) {
           if (puzzles.isEmpty) {
-            return _EmptyState(
-              onImport: () => context.push(Routes.import_),
-            );
+            return const _EmptyState();
           }
 
           // Use archive entries for richer status info; fall back to metadata
@@ -490,8 +488,7 @@ class _PieProgressPainter extends CustomPainter {
 }
 
 class _EmptyState extends StatelessWidget {
-  const _EmptyState({required this.onImport});
-  final VoidCallback onImport;
+  const _EmptyState();
 
   @override
   Widget build(BuildContext context) {
@@ -511,17 +508,11 @@ class _EmptyState extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           Text(
-            'Import a local puzzle to get started.',
+            'Tap + to import or download a puzzle.',
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                   color: Theme.of(context).colorScheme.onSurfaceVariant,
                 ),
             textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: 24),
-          FilledButton.icon(
-            icon: const Icon(Icons.source_outlined),
-            label: const Text('Import Puzzle'),
-            onPressed: onImport,
           ),
         ],
       ),
