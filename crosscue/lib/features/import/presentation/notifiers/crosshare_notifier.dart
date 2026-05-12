@@ -2,7 +2,9 @@ import 'package:crosscue/features/import/data/downloaders/crosshare_downloader.d
 import 'package:crosscue/features/import/data/services/crosshare_auto_download_service.dart';
 import 'package:crosscue/features/import/domain/models/import_job_result.dart';
 import 'package:crosscue/features/import/domain/models/parse_error.dart';
+import 'package:crosscue/features/import/domain/repositories/import_repository.dart';
 import 'package:crosscue/features/import/presentation/providers/import_providers.dart';
+import 'package:crosscue/features/settings/domain/repositories/app_settings_repository.dart';
 import 'package:crosscue/features/settings/presentation/providers/settings_providers.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
@@ -33,8 +35,21 @@ class CrosshareState with _$CrosshareState {
 
 @riverpod
 class CrosshareNotifier extends _$CrosshareNotifier {
+  // Dependencies are resolved once in build() and held as fields so they are
+  // never accessed via ref.read() after an await suspension point. Calling
+  // ref.read() mid-async on an isAutoDispose notifier risks a StateError if
+  // the ref is invalidated between suspension points.
+  late final CrosshareDownloader _downloader;
+  late final ImportRepository _importRepo;
+  late final AppSettingsRepository _settings;
+
   @override
-  CrosshareState build() => const CrosshareIdle();
+  CrosshareState build() {
+    _downloader = ref.read(crosshareDownloaderProvider);
+    _importRepo = ref.read(importRepositoryProvider);
+    _settings = ref.read(appSettingsProvider);
+    return const CrosshareIdle();
+  }
 
   Future<void> download() async {
     state = const CrosshareDownloading();
@@ -51,9 +66,8 @@ class CrosshareNotifier extends _$CrosshareNotifier {
   }
 
   Future<void> _runDownload() async {
-    // Step 1: fetch .puz bytes from Crosshare
-    final downloader = ref.read(crosshareDownloaderProvider);
-    final dlResult = await downloader.downloadToday();
+    // Step 1: fetch .puz bytes from Crosshare.
+    final dlResult = await _downloader.downloadToday();
 
     if (dlResult.isErr) {
       final statusStr = switch (dlResult.error) {
@@ -63,12 +77,12 @@ class CrosshareNotifier extends _$CrosshareNotifier {
       };
       await _persistStatus(statusStr);
       state = CrosshareFailure(message: _downloadErrorMessage(dlResult.error));
+      _invalidateStatusProviders();
       return;
     }
 
-    // Step 2: parse + persist via ImportRepository
-    final repo = ref.read(importRepositoryProvider);
-    final importResult = await repo.importBytes(
+    // Step 2: parse + persist via ImportRepository.
+    final importResult = await _importRepo.importBytes(
       dlResult.value,
       sourceId: 'crosshare_daily_mini',
     );
@@ -87,19 +101,23 @@ class CrosshareNotifier extends _$CrosshareNotifier {
         state = CrosshareFailure(message: _parseErrorMessage(error));
     }
 
-    // Invalidate status providers so the config screen reflects the new state.
-    ref.invalidate(crosshareLastDownloadedDateProvider);
-    ref.invalidate(crosshareLastAttemptStatusProvider);
+    _invalidateStatusProviders();
   }
 
   void reset() => state = const CrosshareIdle();
 
   Future<void> _persistStatus(String status, {String? date}) async {
-    final settings = ref.read(appSettingsProvider);
-    await settings.setCrosshareLastAttemptStatus(status);
+    await _settings.setCrosshareLastAttemptStatus(status);
     if (date != null) {
-      await settings.setCrosshareLastDownloadedDate(date);
+      await _settings.setCrosshareLastDownloadedDate(date);
     }
+  }
+
+  /// Invalidates the cached status providers so the config screen immediately
+  /// reflects the outcome of this download attempt.
+  void _invalidateStatusProviders() {
+    ref.invalidate(crosshareLastDownloadedDateProvider);
+    ref.invalidate(crosshareLastAttemptStatusProvider);
   }
 
   static String _todayString() {
