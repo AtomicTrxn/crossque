@@ -5,9 +5,9 @@ import 'package:crosscue/core/theme/design_tokens.dart';
 import 'package:crosscue/features/settings/presentation/providers/settings_providers.dart';
 import 'package:crosscue/features/settings/presentation/widgets/settings_rows.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
@@ -219,15 +219,11 @@ class _AboutDialog extends StatelessWidget {
           const SizedBox(height: 12),
           TextButton.icon(
             onPressed: () async {
-              await Clipboard.setData(const ClipboardData(text: _githubUrl));
-              if (context.mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('GitHub URL copied')),
-                );
-              }
+              final uri = Uri.parse(_githubUrl);
+              await launchUrl(uri, mode: LaunchMode.externalApplication);
             },
             icon: const Icon(Icons.open_in_new),
-            label: const Text(_githubUrl),
+            label: const Text('GitHub'),
           ),
         ],
       ),
