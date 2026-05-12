@@ -3,6 +3,7 @@
 // Coverage:
 //   – onCreate creates all expected tables (verified by insert/query)
 //   – v1 → v2 migration creates imported_solve_stats table
+//   – v2 → v3 migration seeds crosshare_daily_mini source row
 //   – onUpgrade downgrade safety: StateError thrown for from > to
 //   – clearAllUserData removes puzzles, stats, and settings
 
@@ -48,6 +49,13 @@ void main() {
         () async {
       final rows = await db.select(db.sourcesTable).get();
       expect(rows.any((r) => r.id == 'local_import'), isTrue);
+    });
+
+    test(
+        'sources table is seeded with crosshare_daily_mini row on first create',
+        () async {
+      final rows = await db.select(db.sourcesTable).get();
+      expect(rows.any((r) => r.id == 'crosshare_daily_mini'), isTrue);
     });
   });
 
@@ -144,6 +152,117 @@ void main() {
 
       // Use raw SQL to verify the pre-migration row survived.
       // (Drift's typed query would fail on missing v1→v2 schema columns.)
+      final result = await db.customSelect(
+        'SELECT COUNT(*) AS cnt FROM sources WHERE id = ?',
+        variables: [const Variable<String>('local_import')],
+      ).getSingle();
+      expect(result.read<int>('cnt'), equals(1));
+    });
+  });
+
+  // ---------------------------------------------------------------------------
+  // v2 → v3 migration
+  // ---------------------------------------------------------------------------
+
+  group('v2 → v3 migration', () {
+    late Directory tempDir;
+
+    setUp(() async {
+      tempDir = await Directory.systemTemp.createTemp('drift_v2_test_');
+    });
+
+    tearDown(() async {
+      if (tempDir.existsSync()) await tempDir.delete(recursive: true);
+    });
+
+    test('seeds crosshare_daily_mini source row', () async {
+      final file = File('${tempDir.path}/v2.db');
+
+      // Build a minimal v2 schema using raw sqlite3.
+      final rawDb = raw_sqlite.sqlite3.open(file.path);
+      try {
+        rawDb.execute('''
+          CREATE TABLE sources (
+            id TEXT NOT NULL PRIMARY KEY,
+            display_name TEXT NOT NULL,
+            type TEXT NOT NULL,
+            enabled INTEGER NOT NULL DEFAULT 1,
+            created_at INTEGER NOT NULL,
+            updated_at INTEGER NOT NULL
+          )
+        ''');
+        rawDb.execute('''
+          INSERT INTO sources (id, display_name, type, enabled, created_at, updated_at)
+          VALUES ('local_import', 'Local Import', 'local', 1,
+                  strftime('%s','now'), strftime('%s','now'))
+        ''');
+        rawDb.execute('''
+          CREATE TABLE imported_solve_stats (
+            id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+            completion_type TEXT NOT NULL,
+            elapsed_ms INTEGER NOT NULL,
+            solved_date_local TEXT NOT NULL,
+            width INTEGER NOT NULL,
+            height INTEGER NOT NULL,
+            puzzle_title TEXT NOT NULL,
+            imported_at INTEGER NOT NULL
+          )
+        ''');
+        rawDb.execute('PRAGMA user_version = 2');
+      } finally {
+        rawDb.dispose();
+      }
+
+      // Open with AppDatabase — should trigger onUpgrade(m, 2, 3).
+      final db = AppDatabase(NativeDatabase(file));
+      addTearDown(() => db.close());
+
+      final result = await db.customSelect(
+        'SELECT COUNT(*) AS cnt FROM sources WHERE id = ?',
+        variables: [const Variable<String>('crosshare_daily_mini')],
+      ).getSingle();
+      expect(result.read<int>('cnt'), equals(1));
+    });
+
+    test('local_import row is preserved during v2 → v3 migration', () async {
+      final file = File('${tempDir.path}/v2_data.db');
+      final rawDb = raw_sqlite.sqlite3.open(file.path);
+      try {
+        rawDb.execute('''
+          CREATE TABLE sources (
+            id TEXT NOT NULL PRIMARY KEY,
+            display_name TEXT NOT NULL,
+            type TEXT NOT NULL,
+            enabled INTEGER NOT NULL DEFAULT 1,
+            created_at INTEGER NOT NULL,
+            updated_at INTEGER NOT NULL
+          )
+        ''');
+        rawDb.execute('''
+          INSERT INTO sources (id, display_name, type, enabled, created_at, updated_at)
+          VALUES ('local_import', 'Local Import', 'local', 1,
+                  strftime('%s','now'), strftime('%s','now'))
+        ''');
+        rawDb.execute('''
+          CREATE TABLE imported_solve_stats (
+            id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+            completion_type TEXT NOT NULL,
+            elapsed_ms INTEGER NOT NULL,
+            solved_date_local TEXT NOT NULL,
+            width INTEGER NOT NULL,
+            height INTEGER NOT NULL,
+            puzzle_title TEXT NOT NULL,
+            imported_at INTEGER NOT NULL
+          )
+        ''');
+        rawDb.execute('PRAGMA user_version = 2');
+      } finally {
+        rawDb.dispose();
+      }
+
+      final db = AppDatabase(NativeDatabase(file));
+      addTearDown(() => db.close());
+
       final result = await db.customSelect(
         'SELECT COUNT(*) AS cnt FROM sources WHERE id = ?',
         variables: [const Variable<String>('local_import')],
