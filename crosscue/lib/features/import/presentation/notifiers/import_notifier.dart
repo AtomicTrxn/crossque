@@ -1,5 +1,7 @@
 import 'dart:typed_data';
 
+import 'package:crosscue/features/archive/presentation/providers/archive_providers.dart';
+import 'package:crosscue/features/home/presentation/providers/home_providers.dart';
 import 'package:crosscue/features/import/domain/models/import_job_result.dart';
 import 'package:crosscue/features/import/domain/models/parse_error.dart';
 import 'package:crosscue/features/import/presentation/providers/import_providers.dart';
@@ -85,6 +87,8 @@ class ImportNotifier extends _$ImportNotifier {
       case JobSuccess(:final puzzle):
         state =
             ImportSuccess(puzzleId: puzzle.id, title: puzzle.metadata.title);
+        ref.invalidate(puzzleListProvider);
+        ref.invalidate(archiveEntriesProvider);
       case JobDuplicate():
         state = ImportDuplicate(fileName: file.name);
       case JobFailure(:final error):

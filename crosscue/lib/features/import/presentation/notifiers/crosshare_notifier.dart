@@ -1,3 +1,5 @@
+import 'package:crosscue/features/archive/presentation/providers/archive_providers.dart';
+import 'package:crosscue/features/home/presentation/providers/home_providers.dart';
 import 'package:crosscue/features/import/data/downloaders/crosshare_downloader.dart';
 import 'package:crosscue/features/import/data/services/crosshare_auto_download_service.dart';
 import 'package:crosscue/features/import/domain/models/import_job_result.dart';
@@ -95,6 +97,9 @@ class CrosshareNotifier extends _$CrosshareNotifier {
         await _persistStatus(CrosshareStatus.success, date: today);
         state =
             CrosshareSuccess(puzzleId: puzzle.id, title: puzzle.metadata.title);
+        // Refresh the Today and Archive tabs so the new puzzle appears.
+        ref.invalidate(puzzleListProvider);
+        ref.invalidate(archiveEntriesProvider);
       case JobDuplicate():
         await _persistStatus(CrosshareStatus.duplicate, date: today);
         state = const CrosshareDuplicate();
