@@ -6,6 +6,15 @@ import 'package:go_router/go_router.dart';
 /// Persistent 4-tab shell. Shown for Home, Archive, Stats, and Settings tabs.
 /// Full-page routes (Solve, Import, Onboarding) push over this shell.
 ///
+/// Back-button behaviour: each non-Today branch root screen wraps its body
+/// with [BackToTodayScope], which intercepts back at the branch navigator
+/// level and switches to Today. This is done per-screen (not in the shell)
+/// because go_router's `StatefulShellRoute` bypasses Flutter's
+/// [BackButtonDispatcher], so neither [BackButtonListener] nor a [PopScope]
+/// at the shell level is invoked when the branch navigator has nothing to
+/// pop. The branch-root navigator route does receive the pop, so a
+/// [PopScope] there fires reliably.
+///
 /// Crosshare auto-download is triggered by [appLifecycleObserverProvider]
 /// (registered in [CrosscueApp.initState]), not from here. Keeping lifecycle
 /// observation out of the shell prevents spurious downloads when the app is
@@ -15,55 +24,35 @@ class AppShell extends ConsumerWidget {
 
   final StatefulNavigationShell navigationShell;
 
-  // Branch roots that should redirect to Today instead of exiting the app.
-  static const _nonTodayBranchRoots = {'/archive', '/stats', '/settings'};
-
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    return BackButtonListener(
-      // Intercept back at the router-dispatcher level, before go_router acts.
-      //
-      // • Non-Today branch root (/archive, /stats, /settings): consume the
-      //   event and switch to Today — never exits the app from these screens.
-      // • Branch sub-pages (/settings/sources, etc.) or full-page overlays
-      //   (/solve/…, /import): return false so go_router pops normally.
-      // • Today (/): return false so the system handles it (app exits).
-      onBackButtonPressed: () async {
-        final location = GoRouterState.of(context).uri.path;
-        if (_nonTodayBranchRoots.contains(location)) {
-          navigationShell.goBranch(0);
-          return true;
-        }
-        return false;
-      },
-      child: Scaffold(
-        body: navigationShell,
-        bottomNavigationBar: NavigationBar(
-          selectedIndex: navigationShell.currentIndex,
-          onDestinationSelected: _onDestinationSelected,
-          destinations: const [
-            NavigationDestination(
-              icon: CrosscueNavIcon.home(selected: false),
-              selectedIcon: CrosscueNavIcon.home(selected: true),
-              label: 'Today',
-            ),
-            NavigationDestination(
-              icon: CrosscueNavIcon.archive(selected: false),
-              selectedIcon: CrosscueNavIcon.archive(selected: true),
-              label: 'Archive',
-            ),
-            NavigationDestination(
-              icon: CrosscueNavIcon.stats(selected: false),
-              selectedIcon: CrosscueNavIcon.stats(selected: true),
-              label: 'Stats',
-            ),
-            NavigationDestination(
-              icon: CrosscueNavIcon.settings(selected: false),
-              selectedIcon: CrosscueNavIcon.settings(selected: true),
-              label: 'Settings',
-            ),
-          ],
-        ),
+    return Scaffold(
+      body: navigationShell,
+      bottomNavigationBar: NavigationBar(
+        selectedIndex: navigationShell.currentIndex,
+        onDestinationSelected: _onDestinationSelected,
+        destinations: const [
+          NavigationDestination(
+            icon: CrosscueNavIcon.home(selected: false),
+            selectedIcon: CrosscueNavIcon.home(selected: true),
+            label: 'Today',
+          ),
+          NavigationDestination(
+            icon: CrosscueNavIcon.archive(selected: false),
+            selectedIcon: CrosscueNavIcon.archive(selected: true),
+            label: 'Archive',
+          ),
+          NavigationDestination(
+            icon: CrosscueNavIcon.stats(selected: false),
+            selectedIcon: CrosscueNavIcon.stats(selected: true),
+            label: 'Stats',
+          ),
+          NavigationDestination(
+            icon: CrosscueNavIcon.settings(selected: false),
+            selectedIcon: CrosscueNavIcon.settings(selected: true),
+            label: 'Settings',
+          ),
+        ],
       ),
     );
   }
