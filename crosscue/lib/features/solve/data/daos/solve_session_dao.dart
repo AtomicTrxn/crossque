@@ -38,6 +38,11 @@ class SolveSessionDao extends DatabaseAccessor<AppDatabase>
             ..limit(1))
           .getSingleOrNull();
 
+  /// Emits whenever any solve session changes. Archive/Home projections use
+  /// this as a table-change signal and then reload their denormalized rows.
+  Stream<List<SolveSessionRow>> watchAllSessions() =>
+      select(solveSessionsTable).watch();
+
   /// Creates a new session and returns its auto-increment id.
   Future<int> createSession(String puzzleId) {
     final now = DateTime.now().toUtc();
@@ -152,4 +157,9 @@ class SolveSessionDao extends DatabaseAccessor<AppDatabase>
   Future<List<CellProgressRow>> loadCellProgress(int sessionId) =>
       (select(cellProgressTable)..where((t) => t.sessionId.equals(sessionId)))
           .get();
+
+  /// Emits whenever cell progress changes. Archive completion fractions depend
+  /// on these rows, so this drives reactive Archive/Home status refreshes.
+  Stream<List<CellProgressRow>> watchAllCellProgress() =>
+      select(cellProgressTable).watch();
 }

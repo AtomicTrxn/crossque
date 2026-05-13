@@ -56,6 +56,7 @@ void main() {
       final result = await repo.createOrResumeSession(puzzle);
       expect(result.isResumed, isFalse);
       expect(result.sessionId, greaterThan(0));
+      expect(result.status, PuzzleStatus.inProgress);
       expect(result.elapsedMs, equals(0));
       expect(result.isPaused, isFalse);
       // All cells should be blank
@@ -106,6 +107,7 @@ void main() {
       final resumed = await repo.createOrResumeSession(puzzle);
       expect(resumed.isResumed, isTrue);
       expect(resumed.sessionId, equals(created.sessionId));
+      expect(resumed.status, PuzzleStatus.inProgress);
       expect(resumed.elapsedMs, equals(12000));
       expect(resumed.focus.row, equals(0));
       expect(resumed.focus.col, equals(1));
@@ -120,6 +122,43 @@ void main() {
       final s2 = await repo.createOrResumeSession(puzzle);
 
       expect(s1.sessionId, equals(s2.sessionId));
+    });
+
+    test('resumes completed session instead of creating a blank solve',
+        () async {
+      final puzzleId = await importPuzzle();
+      final puzzle = (await db.puzzleDao.getPuzzle(puzzleId))!;
+      final session = await repo.createOrResumeSession(puzzle);
+      final completedProgress = Grid<CellProgress>.generate(3, 3, (r, c) {
+        final solution = puzzle.grid.cell(r, c).solution;
+        return CellProgress(letter: solution, state: CellState.filled);
+      });
+
+      await repo.markComplete(
+        sessionId: session.sessionId,
+        puzzleWidth: 3,
+        puzzleHeight: 3,
+        progress: completedProgress,
+        focus: defaultFocus,
+        elapsedMs: 42000,
+        status: PuzzleStatus.solved,
+        completionType: CompletionType.clean,
+        checkCount: 0,
+        revealCount: 0,
+        usedCheck: false,
+        usedReveal: false,
+        cleanSolveEligible: true,
+      );
+
+      final resumed = await repo.createOrResumeSession(puzzle);
+
+      expect(resumed.sessionId, session.sessionId);
+      expect(resumed.status, PuzzleStatus.solved);
+      expect(resumed.elapsedMs, 42000);
+      expect(
+        resumed.progress.cell(0, 0).letter,
+        puzzle.grid.cell(0, 0).solution,
+      );
     });
   });
 

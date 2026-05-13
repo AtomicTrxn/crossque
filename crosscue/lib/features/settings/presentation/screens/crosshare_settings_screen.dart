@@ -1,8 +1,11 @@
+import 'package:crosscue/core/routing/routes.dart';
 import 'package:crosscue/core/theme/design_tokens.dart';
+import 'package:crosscue/core/theme/theme_colors.dart';
 import 'package:crosscue/features/import/presentation/notifiers/crosshare_notifier.dart';
 import 'package:crosscue/features/settings/presentation/providers/settings_providers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class CrosshareSettingsScreen extends ConsumerWidget {
@@ -13,7 +16,6 @@ class CrosshareSettingsScreen extends ConsumerWidget {
     final autoDownload = ref.watch(crosshareAutoDownloadProvider);
     final dlState = ref.watch(crosshareProvider);
     final lastStatus = ref.watch(crosshareLastAttemptStatusProvider);
-    final colorScheme = Theme.of(context).colorScheme;
     final isDownloading = dlState is CrosshareDownloading;
 
     // Pop back after a successful manual download.
@@ -27,7 +29,7 @@ class CrosshareSettingsScreen extends ConsumerWidget {
 
     final autoEnabled = switch (autoDownload) {
       AsyncData(:final value) => value,
-      _ => true,
+      _ => false,
     };
 
     return Scaffold(
@@ -56,7 +58,7 @@ class CrosshareSettingsScreen extends ConsumerWidget {
                   'and solving crossword puzzles. Daily mini crosswords are '
                   'published by the community every day.',
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: colorScheme.onSurfaceVariant,
+                        color: context.crosscueOnSurface3,
                       ),
                 ),
                 const SizedBox(height: 12),
@@ -129,7 +131,7 @@ class CrosshareSettingsScreen extends ConsumerWidget {
               ),
               child: Text(
                 dlState.message,
-                style: TextStyle(color: colorScheme.error, fontSize: 13),
+                style: TextStyle(color: context.crosscueError, fontSize: 13),
               ),
             ),
           ],
@@ -139,9 +141,26 @@ class CrosshareSettingsScreen extends ConsumerWidget {
                 horizontal: CrosscueSpacing.screenH,
                 vertical: 8,
               ),
-              child: Text(
-                "Today's puzzle is already in your library.",
-                style: Theme.of(context).textTheme.bodyMedium,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    "Today's puzzle is already in your library.",
+                    style: Theme.of(context).textTheme.bodyMedium,
+                  ),
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: TextButton.icon(
+                      onPressed: () => context.go(Routes.home),
+                      icon: const Icon(Icons.arrow_forward),
+                      label: const Text('Open today'),
+                      style: TextButton.styleFrom(
+                        padding: EdgeInsets.zero,
+                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
           ],
@@ -187,11 +206,10 @@ class CrosshareSettingsScreen extends ConsumerWidget {
   }
 
   Color _statusColor(BuildContext context, String status) {
-    final cs = Theme.of(context).colorScheme;
     return switch (status) {
-      'success' || 'duplicate' => cs.primary,
-      'not_found' || 'network_error' => cs.error,
-      _ => cs.onSurfaceVariant,
+      'success' || 'duplicate' => context.crosscuePrimary,
+      'not_found' || 'network_error' => context.crosscueError,
+      _ => context.crosscueOnSurface3,
     };
   }
 

@@ -10,21 +10,24 @@ part of 'core_providers.dart';
 // ignore_for_file: type=lint, type=warning
 /// App version string in the form `v1.2.3`, derived from [PackageInfo].
 ///
-/// Returns a fallback `'v—'` on platforms where [PackageInfo] is unavailable.
+/// Returns a fallback `'vunknown'` on platforms where [PackageInfo] is
+/// unavailable.
 
 @ProviderFor(appVersion)
 final appVersionProvider = AppVersionProvider._();
 
 /// App version string in the form `v1.2.3`, derived from [PackageInfo].
 ///
-/// Returns a fallback `'v—'` on platforms where [PackageInfo] is unavailable.
+/// Returns a fallback `'vunknown'` on platforms where [PackageInfo] is
+/// unavailable.
 
 final class AppVersionProvider
     extends $FunctionalProvider<AsyncValue<String>, String, FutureOr<String>>
     with $FutureModifier<String>, $FutureProvider<String> {
   /// App version string in the form `v1.2.3`, derived from [PackageInfo].
   ///
-  /// Returns a fallback `'v—'` on platforms where [PackageInfo] is unavailable.
+  /// Returns a fallback `'vunknown'` on platforms where [PackageInfo] is
+  /// unavailable.
   AppVersionProvider._()
       : super(
           from: null,
@@ -50,7 +53,7 @@ final class AppVersionProvider
   }
 }
 
-String _$appVersionHash() => r'f828c62d453bc5def96d4002a8a3793f42dd82b8';
+String _$appVersionHash() => r'68c7de8153f7d44e856313643ce74079bcd8c045';
 
 /// Shared [Dio] HTTP client for all network sources.
 
@@ -324,73 +327,3 @@ final class SoundPlayerProvider
 }
 
 String _$soundPlayerHash() => r'e8a014932109bf01b02f58abdf475f9b2e7cc575';
-
-/// Registers a [WidgetsBindingObserver] that triggers the Crosshare
-/// auto-download whenever the app returns to the foreground.
-///
-/// Kept alive for the full app lifetime. Reads [crosshareAutoDownloadService]
-/// (also keepAlive) rather than holding a direct reference, so the service
-/// provider is only created once.
-///
-/// Must be eagerly initialised in [CrosscueApp] (via `ref.read`) so the
-/// observer is registered before the first lifecycle event fires.
-
-@ProviderFor(appLifecycleObserver)
-final appLifecycleObserverProvider = AppLifecycleObserverProvider._();
-
-/// Registers a [WidgetsBindingObserver] that triggers the Crosshare
-/// auto-download whenever the app returns to the foreground.
-///
-/// Kept alive for the full app lifetime. Reads [crosshareAutoDownloadService]
-/// (also keepAlive) rather than holding a direct reference, so the service
-/// provider is only created once.
-///
-/// Must be eagerly initialised in [CrosscueApp] (via `ref.read`) so the
-/// observer is registered before the first lifecycle event fires.
-
-final class AppLifecycleObserverProvider
-    extends $FunctionalProvider<void, void, void> with $Provider<void> {
-  /// Registers a [WidgetsBindingObserver] that triggers the Crosshare
-  /// auto-download whenever the app returns to the foreground.
-  ///
-  /// Kept alive for the full app lifetime. Reads [crosshareAutoDownloadService]
-  /// (also keepAlive) rather than holding a direct reference, so the service
-  /// provider is only created once.
-  ///
-  /// Must be eagerly initialised in [CrosscueApp] (via `ref.read`) so the
-  /// observer is registered before the first lifecycle event fires.
-  AppLifecycleObserverProvider._()
-      : super(
-          from: null,
-          argument: null,
-          retry: null,
-          name: r'appLifecycleObserverProvider',
-          isAutoDispose: false,
-          dependencies: null,
-          $allTransitiveDependencies: null,
-        );
-
-  @override
-  String debugGetCreateSourceHash() => _$appLifecycleObserverHash();
-
-  @$internal
-  @override
-  $ProviderElement<void> $createElement($ProviderPointer pointer) =>
-      $ProviderElement(pointer);
-
-  @override
-  void create(Ref ref) {
-    return appLifecycleObserver(ref);
-  }
-
-  /// {@macro riverpod.override_with_value}
-  Override overrideWithValue(void value) {
-    return $ProviderOverride(
-      origin: this,
-      providerOverride: $SyncValueProvider<void>(value),
-    );
-  }
-}
-
-String _$appLifecycleObserverHash() =>
-    r'dfd253fa853b98e4c60f89d9a976da9265f3ac97';

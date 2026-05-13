@@ -66,7 +66,6 @@ class IpuzParser implements PuzzleParser {
   }
 
   @override
-  @override
   Result<Puzzle, ParseError> parse(
     Uint8List bytes, {
     String sourceId = 'local_import',

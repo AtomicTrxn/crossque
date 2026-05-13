@@ -10,6 +10,7 @@ final class SessionLoadResult {
     required this.sessionId,
     required this.progress,
     required this.focus,
+    required this.status,
     required this.elapsedMs,
     required this.isPaused,
     required this.isResumed,
@@ -23,6 +24,7 @@ final class SessionLoadResult {
   final int sessionId;
   final Grid<CellProgress> progress;
   final FocusPosition focus;
+  final PuzzleStatus status;
   final int elapsedMs;
   final bool isPaused;
   final bool isResumed;

@@ -1,5 +1,3 @@
-import 'dart:math' as math;
-
 import 'package:crosscue/core/domain/models/enums.dart';
 import 'package:crosscue/core/domain/models/puzzle_metadata.dart';
 import 'package:crosscue/core/routing/routes.dart';
@@ -8,6 +6,7 @@ import 'package:crosscue/core/theme/theme_colors.dart';
 import 'package:crosscue/core/utils/time_format.dart';
 import 'package:crosscue/features/archive/domain/models/archive_entry.dart';
 import 'package:crosscue/features/archive/presentation/providers/archive_providers.dart';
+import 'package:crosscue/features/archive/presentation/widgets/puzzle_list_tile.dart';
 import 'package:crosscue/features/home/presentation/providers/home_providers.dart';
 import 'package:crosscue/features/import/domain/repositories/puzzle_source.dart';
 import 'package:crosscue/features/import/presentation/providers/source_registry_provider.dart';
@@ -15,6 +14,33 @@ import 'package:crosscue/features/stats/presentation/providers/stats_providers.d
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+
+const _streakEmojiStyle = TextStyle(fontSize: 16);
+const _streakCountStyle = TextStyle(
+  fontFamily: CrosscueTypography.robotoMono,
+  fontSize: CrosscueTypography.timer,
+  fontWeight: FontWeight.w500,
+);
+const _sectionHeaderStyle = TextStyle(
+  fontSize: 11,
+  fontWeight: FontWeight.w600,
+  letterSpacing: 1.0,
+  height: 1.2,
+);
+const _featuredTitleStyle = TextStyle(
+  fontSize: CrosscueTypography.puzzleTitle,
+  fontWeight: FontWeight.w600,
+  height: 1.25,
+);
+const _featuredSubtitleStyle = TextStyle(
+  fontSize: CrosscueTypography.bodySmall,
+);
+const _featuredAuthorStyle = TextStyle(fontSize: CrosscueTypography.label);
+const _primaryButtonTextStyle = TextStyle(
+  fontSize: CrosscueTypography.body,
+  fontWeight: FontWeight.w600,
+  letterSpacing: 0.4,
+);
 
 class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
@@ -42,15 +68,12 @@ class HomeScreen extends ConsumerWidget {
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Text('🔥', style: TextStyle(fontSize: 16)),
+                  const Text('🔥', style: _streakEmojiStyle),
                   const SizedBox(width: 3),
                   Text(
                     '$currentStreak',
-                    style: TextStyle(
-                      fontFamily: CrosscueTypography.robotoMono,
-                      fontSize: CrosscueTypography.timer,
+                    style: _streakCountStyle.copyWith(
                       color: context.crosscueOnSurface2,
-                      fontWeight: FontWeight.w500,
                     ),
                   ),
                 ],
@@ -64,9 +87,7 @@ class HomeScreen extends ConsumerWidget {
         error: (e, _) => Center(child: Text('Error: $e')),
         data: (puzzles) {
           if (puzzles.isEmpty) {
-            return _EmptyState(
-              onImport: () => context.push(Routes.import_),
-            );
+            return const _EmptyState();
           }
 
           // Use archive entries for richer status info; fall back to metadata
@@ -97,9 +118,11 @@ class HomeScreen extends ConsumerWidget {
                 const _SectionHeader('Recent'),
                 ...recent.map((p) {
                   final entry = entryMap[p.id];
-                  return _PuzzleRow(
-                    puzzle: p,
+                  return PuzzleListTile(
+                    title: p.title,
                     entry: entry,
+                    subtitle: _recentSubtitle(p),
+                    showProgress: true,
                     onTap: () => context.push(
                       Routes.solveFor(Uri.encodeComponent(p.id)),
                     ),
@@ -171,12 +194,8 @@ class _SectionHeader extends StatelessWidget {
       ),
       child: Text(
         label.toUpperCase(),
-        style: TextStyle(
-          fontSize: 11,
-          fontWeight: FontWeight.w600,
+        style: _sectionHeaderStyle.copyWith(
           color: context.crosscueOnSurface3,
-          letterSpacing: 1.0,
-          height: 1.2,
         ),
       ),
     );
@@ -221,11 +240,8 @@ class _FeaturedPuzzle extends StatelessWidget {
         children: [
           Text(
             puzzle.title,
-            style: TextStyle(
-              fontSize: CrosscueTypography.puzzleTitle,
-              fontWeight: FontWeight.w600,
+            style: _featuredTitleStyle.copyWith(
               color: context.crosscueOnSurface1,
-              height: 1.25,
             ),
           ),
           const SizedBox(height: 4),
@@ -235,14 +251,13 @@ class _FeaturedPuzzle extends StatelessWidget {
               Flexible(
                 child: Text(
                   sub,
-                  style: TextStyle(
-                    fontSize: CrosscueTypography.bodySmall,
+                  style: _featuredSubtitleStyle.copyWith(
                     color: context.crosscueOnSurface2,
                   ),
                 ),
               ),
               const SizedBox(width: 4),
-              _PieProgress(value: completionFraction),
+              PuzzleProgressPie(value: completionFraction),
             ],
           ),
           // Constructor line — separate 12px #999
@@ -250,8 +265,7 @@ class _FeaturedPuzzle extends StatelessWidget {
             const SizedBox(height: 2),
             Text(
               puzzle.author,
-              style: TextStyle(
-                fontSize: CrosscueTypography.label,
+              style: _featuredAuthorStyle.copyWith(
                 color: context.crosscueOnSurface3,
               ),
             ),
@@ -260,8 +274,7 @@ class _FeaturedPuzzle extends StatelessWidget {
             const SizedBox(height: 2),
             Text(
               elapsedStr,
-              style: TextStyle(
-                fontSize: CrosscueTypography.bodySmall,
+              style: _featuredSubtitleStyle.copyWith(
                 color: context.crosscueOnSurface2,
               ),
             ),
@@ -277,11 +290,7 @@ class _FeaturedPuzzle extends StatelessWidget {
                 borderRadius:
                     BorderRadius.circular(CrosscueSpacing.buttonRadius),
               ),
-              textStyle: const TextStyle(
-                fontSize: CrosscueTypography.body,
-                fontWeight: FontWeight.w600,
-                letterSpacing: 0.4,
-              ),
+              textStyle: _primaryButtonTextStyle,
             ),
             child: Text(status),
           ),
@@ -298,200 +307,21 @@ class _FeaturedPuzzle extends StatelessWidget {
   }
 }
 
-// ---------------------------------------------------------------------------
-// Recent puzzle row (flat)
-// ---------------------------------------------------------------------------
-
-class _PuzzleRow extends StatelessWidget {
-  const _PuzzleRow({
-    required this.puzzle,
-    required this.entry,
-    required this.onTap,
-  });
-
-  final PuzzleMetadata puzzle;
-  final ArchiveEntry? entry;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final statusColor = _statusColor(context, entry);
-    final statusIcon = _statusIcon(entry);
-    final sub = _subtitle(entry, puzzle);
-    final completionFraction = entry?.completionFraction ?? 0;
-    final onSurface3 = context.crosscueOnSurface3;
-
-    return Column(
-      children: [
-        InkWell(
-          onTap: onTap,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(
-              vertical: CrosscueSpacing.rowV,
-              horizontal: CrosscueSpacing.screenH,
-            ),
-            child: Row(
-              children: [
-                // Status icon — 20dp wide
-                SizedBox(
-                  width: 20,
-                  child: Icon(statusIcon, size: 16, color: statusColor),
-                ),
-                const SizedBox(width: 12),
-                // Title + subtitle
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        puzzle.title,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          fontSize: CrosscueTypography.body,
-                          fontWeight: FontWeight.w500,
-                          color: context.crosscueOnSurface1,
-                        ),
-                      ),
-                      if (sub != null)
-                        Row(
-                          children: [
-                            Flexible(
-                              child: Text(
-                                sub,
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: TextStyle(
-                                  fontSize: CrosscueTypography.label,
-                                  color: onSurface3,
-                                ),
-                              ),
-                            ),
-                            const SizedBox(width: 4),
-                            _PieProgress(value: completionFraction),
-                          ],
-                        ),
-                    ],
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Icon(
-                  Icons.chevron_right,
-                  size: 18,
-                  color: onSurface3,
-                ),
-              ],
-            ),
-          ),
-        ),
-        Divider(
-          height: 1,
-          indent: 50, // 16 screenH + 20 icon + 12 gap + 2 extra = 50 per spec
-          endIndent: 0,
-          color: context.crosscueDivider,
-        ),
-      ],
-    );
+String _recentSubtitle(PuzzleMetadata p) {
+  final parts = <String>['${p.width}×${p.height}'];
+  if (p.difficulty != null && p.difficulty!.isNotEmpty) {
+    parts.add(p.difficulty!);
   }
-
-  Color _statusColor(BuildContext context, ArchiveEntry? e) {
-    if (e == null || e.isNotStarted) return context.crosscueOnSurface3;
-    if (e.isCleanSolve) return CrosscueColors.primary;
-    if (e.isCompleted || e.isRevealed) return context.crosscueCorrect;
-    return CrosscueColors.primaryMid; // in progress
-  }
-
-  IconData _statusIcon(ArchiveEntry? e) {
-    if (e == null || e.isNotStarted) return Icons.radio_button_unchecked;
-    if (e.isCleanSolve) return Icons.star_rounded;
-    if (e.isCompleted || e.isRevealed) return Icons.check_circle_outline;
-    return Icons.timelapse_rounded; // in progress
-  }
-
-  String? _subtitle(ArchiveEntry? e, PuzzleMetadata p) {
-    final parts = <String>['${p.width}×${p.height}'];
-    if (p.difficulty != null && p.difficulty!.isNotEmpty) {
-      parts.add(p.difficulty!);
-    }
-    if (p.author.isNotEmpty) parts.add(p.author);
-    return parts.join(' · ');
-  }
+  if (p.author.isNotEmpty) parts.add(p.author);
+  return parts.join(' · ');
 }
 
 // ---------------------------------------------------------------------------
 // Empty state
 // ---------------------------------------------------------------------------
 
-class _PieProgress extends StatelessWidget {
-  const _PieProgress({required this.value});
-
-  final double value;
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      width: 18,
-      height: 18,
-      child: CustomPaint(
-        painter: _PieProgressPainter(
-          value: value.clamp(0.0, 1.0),
-          fill: CrosscueColors.primary,
-          track: CrosscueColors.trackGrey,
-        ),
-      ),
-    );
-  }
-}
-
-class _PieProgressPainter extends CustomPainter {
-  const _PieProgressPainter({
-    required this.value,
-    required this.fill,
-    required this.track,
-  });
-
-  final double value;
-  final Color fill;
-  final Color track;
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final center = Offset(size.width / 2, size.height / 2);
-    final radius = size.shortestSide / 2;
-    final trackPaint = Paint()
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 2.5
-      ..color = track;
-    canvas.drawCircle(center, radius - 1.25, trackPaint);
-
-    if (value <= 0) return;
-    final fillPaint = Paint()
-      ..style = PaintingStyle.fill
-      ..color = fill;
-    if (value >= 1) {
-      canvas.drawCircle(center, radius - 1.25, fillPaint);
-      return;
-    }
-
-    final rect = Rect.fromCircle(center: center, radius: radius - 1.25);
-    final path = Path()
-      ..moveTo(center.dx, center.dy)
-      ..arcTo(rect, -math.pi / 2, math.pi * 2 * value, false)
-      ..close();
-    canvas.drawPath(path, fillPaint);
-  }
-
-  @override
-  bool shouldRepaint(_PieProgressPainter oldDelegate) {
-    return oldDelegate.value != value ||
-        oldDelegate.fill != fill ||
-        oldDelegate.track != track;
-  }
-}
-
 class _EmptyState extends StatelessWidget {
-  const _EmptyState({required this.onImport});
-  final VoidCallback onImport;
+  const _EmptyState();
 
   @override
   Widget build(BuildContext context) {
@@ -502,7 +332,7 @@ class _EmptyState extends StatelessWidget {
           Icon(
             Icons.grid_on_outlined,
             size: 72,
-            color: Theme.of(context).colorScheme.onSurfaceVariant,
+            color: context.crosscueOnSurface3,
           ),
           const SizedBox(height: 16),
           Text(
@@ -511,17 +341,11 @@ class _EmptyState extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           Text(
-            'Import a local puzzle to get started.',
+            'Tap + to import or download a puzzle.',
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  color: context.crosscueOnSurface3,
                 ),
             textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: 24),
-          FilledButton.icon(
-            icon: const Icon(Icons.source_outlined),
-            label: const Text('Import Puzzle'),
-            onPressed: onImport,
           ),
         ],
       ),

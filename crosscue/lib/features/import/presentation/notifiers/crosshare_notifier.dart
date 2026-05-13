@@ -1,3 +1,7 @@
+import 'dart:async';
+
+import 'package:crosscue/core/providers/core_providers.dart';
+import 'package:crosscue/core/telemetry/crash_reporter.dart';
 import 'package:crosscue/features/import/data/downloaders/crosshare_downloader.dart';
 import 'package:crosscue/features/import/data/services/crosshare_auto_download_service.dart';
 import 'package:crosscue/features/import/domain/models/import_job_result.dart';
@@ -6,6 +10,7 @@ import 'package:crosscue/features/import/domain/repositories/import_repository.d
 import 'package:crosscue/features/import/presentation/providers/import_providers.dart';
 import 'package:crosscue/features/settings/domain/repositories/app_settings_repository.dart';
 import 'package:crosscue/features/settings/presentation/providers/settings_providers.dart';
+import 'package:flutter/widgets.dart' show debugPrint;
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
@@ -42,12 +47,14 @@ class CrosshareNotifier extends _$CrosshareNotifier {
   late final CrosshareDownloader _downloader;
   late final ImportRepository _importRepo;
   late final AppSettingsRepository _settings;
+  late final CrashReporter _crashReporter;
 
   @override
   CrosshareState build() {
     _downloader = ref.read(crosshareDownloaderProvider);
     _importRepo = ref.read(importRepositoryProvider);
     _settings = ref.read(appSettingsProvider);
+    _crashReporter = ref.read(crashReporterProvider);
     return const CrosshareIdle();
   }
 
@@ -59,8 +66,9 @@ class CrosshareNotifier extends _$CrosshareNotifier {
     } catch (e, st) {
       // Safety net: if anything unexpected escapes _runDownload, recover
       // rather than leaving the UI permanently stuck in the spinning state.
-      // ignore: avoid_print
-      print('[CrosshareNotifier] unexpected error: $e\n$st');
+      // Local log for dev visibility; crash report respects user opt-in.
+      debugPrint('[CrosshareNotifier] unexpected error: $e\n$st');
+      unawaited(_crashReporter.reportError(e, st));
       state = const CrosshareFailure(
         message: 'An unexpected error occurred. Please try again.',
       );

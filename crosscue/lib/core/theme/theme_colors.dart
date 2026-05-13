@@ -8,6 +8,13 @@ extension CrosscueThemeColors on BuildContext {
       ? CrosscueColors.onSurface1Light
       : CrosscueColors.onSurface1Dark;
 
+  Color get crosscueSurface => isCrosscueLight
+      ? CrosscueColors.surfaceLight
+      : CrosscueColors.surfaceDark;
+
+  Color get crosscuePrimary =>
+      isCrosscueLight ? CrosscueColors.primary : CrosscueColors.primaryLight;
+
   Color get crosscueOnSurface2 => isCrosscueLight
       ? CrosscueColors.onSurface2Light
       : CrosscueColors.onSurface2Dark;
@@ -30,4 +37,8 @@ extension CrosscueThemeColors on BuildContext {
   Color get crosscueCorrect => isCrosscueLight
       ? CrosscueColors.correctLight
       : CrosscueColors.correctDark;
+
+  Color get crosscueError => isCrosscueLight
+      ? CrosscueColors.incorrectLight
+      : CrosscueColors.incorrectDark;
 }

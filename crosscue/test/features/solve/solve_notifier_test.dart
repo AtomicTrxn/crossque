@@ -13,6 +13,7 @@ import 'package:crosscue/features/import/presentation/providers/import_providers
 import 'package:crosscue/features/settings/domain/repositories/app_settings_repository.dart';
 import 'package:crosscue/features/settings/presentation/providers/settings_providers.dart';
 import 'package:crosscue/features/solve/domain/models/cell_progress.dart';
+import 'package:crosscue/features/solve/domain/models/check_result.dart';
 import 'package:crosscue/features/solve/domain/models/focus_position.dart';
 import 'package:crosscue/features/solve/domain/repositories/solve_repository.dart';
 import 'package:crosscue/features/solve/presentation/notifiers/solve_notifier.dart';
@@ -54,7 +55,7 @@ void main() {
 
     final notifier = container.read(provider.notifier);
     notifier.inputLetter('A');
-    notifier.inputLetter('B');
+    notifier.inputLetter('X');
 
     notifier.backspace();
     var solveState = container.read(provider).value!;
@@ -83,7 +84,8 @@ void main() {
             .overrideWithValue(_FakeImportRepository(puzzle)),
         solveRepositoryProvider.overrideWithValue(solveRepository),
         statsRepositoryProvider.overrideWithValue(_FakeStatsRepository()),
-        appSettingsProvider.overrideWithValue(_FakeAppSettingsRepository()),
+        appSettingsProvider
+            .overrideWithValue(const _FakeAppSettingsRepository()),
       ],
     );
     addTearDown(container.dispose);
@@ -99,15 +101,117 @@ void main() {
     expect(completed.completionType, CompletionType.checked);
     expect(container.read(provider).value?.status, PuzzleStatus.solvedWithHelp);
   });
+
+  test('checked-correct cells cannot be overwritten or backspaced', () async {
+    final puzzle = _puzzle();
+    final container = _containerFor(puzzle, _checkedCorrectProgress());
+    addTearDown(container.dispose);
+
+    final provider = solveProvider(Uri.encodeComponent(puzzle.id));
+    await container.read(provider.future);
+
+    final notifier = container.read(provider.notifier);
+    expect(notifier.inputLetter('Z'), isFalse);
+    notifier.backspace();
+
+    final solveState = container.read(provider).value!;
+    expect(solveState.progress.cell(0, 0).letter, equals('A'));
+    expect(
+      solveState.progress.cell(0, 0).state,
+      CellState.checkedCorrect,
+    );
+  });
+
+  test('tapping filled cells keeps focus on the tapped cell', () async {
+    final puzzle = _crossingPuzzle();
+    final container = _containerFor(puzzle, _crossingProgress());
+    addTearDown(container.dispose);
+
+    final provider = solveProvider(Uri.encodeComponent(puzzle.id));
+    await container.read(provider.future);
+
+    final focus = container.read(provider.notifier).tapCell(0, 1);
+
+    expect(
+      focus,
+      const FocusPosition(row: 0, col: 1, direction: Direction.down),
+    );
+  });
+
+  test('tapping a checked-correct cell moves to perpendicular open cell',
+      () async {
+    final puzzle = _crossingPuzzle();
+    final container = _containerFor(puzzle, _checkedCrossingProgress());
+    addTearDown(container.dispose);
+
+    final provider = solveProvider(Uri.encodeComponent(puzzle.id));
+    await container.read(provider.future);
+
+    final focus = container.read(provider.notifier).tapCell(0, 1);
+
+    expect(
+      focus,
+      const FocusPosition(row: 1, col: 1, direction: Direction.down),
+    );
+  });
+
+  test('skip filled cells wraps within the active word', () async {
+    final puzzle = _threeCellPuzzle();
+    final container = _containerFor(
+      puzzle,
+      _skipWrapProgress(),
+      skipFilledCells: true,
+    );
+    addTearDown(container.dispose);
+
+    final provider = solveProvider(Uri.encodeComponent(puzzle.id));
+    await container.read(provider.future);
+    await container.read(skipFilledCellsProvider.future);
+
+    final notifier = container.read(provider.notifier);
+    notifier.moveFocusTo(0, 2, Direction.across);
+    notifier.inputLetter('C');
+
+    final solveState = container.read(provider).value!;
+    expect(
+      solveState.focus,
+      const FocusPosition(row: 0, col: 1, direction: Direction.across),
+    );
+  });
+
+  test('completing a word advances to the next incomplete clue', () async {
+    final puzzle = _twoWordPuzzle();
+    final container = _containerFor(puzzle, _twoWordAlmostCompleteProgress());
+    addTearDown(container.dispose);
+
+    final provider = solveProvider(Uri.encodeComponent(puzzle.id));
+    await container.read(provider.future);
+
+    final notifier = container.read(provider.notifier);
+    notifier.moveFocusTo(0, 1, Direction.across);
+    notifier.inputLetter('B');
+
+    final solveState = container.read(provider).value!;
+    expect(
+      solveState.focus,
+      const FocusPosition(row: 1, col: 0, direction: Direction.across),
+    );
+  });
 }
 
-ProviderContainer _containerFor(Puzzle puzzle, Grid<CellProgress> progress) {
+ProviderContainer _containerFor(
+  Puzzle puzzle,
+  Grid<CellProgress> progress, {
+  bool skipFilledCells = false,
+}) {
   return ProviderContainer(
     overrides: [
       importRepositoryProvider.overrideWithValue(_FakeImportRepository(puzzle)),
       solveRepositoryProvider.overrideWithValue(_FakeSolveRepository(progress)),
       statsRepositoryProvider.overrideWithValue(_FakeStatsRepository()),
-      appSettingsProvider.overrideWithValue(_FakeAppSettingsRepository()),
+      appSettingsProvider.overrideWithValue(
+        _FakeAppSettingsRepository(skipFilledCells: skipFilledCells),
+      ),
     ],
   );
 }
@@ -173,11 +277,235 @@ Grid<CellProgress> _filledProgress() {
   );
 }
 
+Grid<CellProgress> _checkedCorrectProgress() {
+  return Grid(
+    width: 2,
+    height: 1,
+    cells: const [
+      CellProgress(letter: 'A', state: CellState.checkedCorrect),
+      CellProgress.blank,
+    ],
+  );
+}
+
 Grid<CellProgress> _blankProgress() {
   return Grid(
     width: 2,
     height: 1,
     cells: const [
+      CellProgress.blank,
+      CellProgress.blank,
+    ],
+  );
+}
+
+Puzzle _crossingPuzzle() {
+  return Puzzle(
+    metadata: PuzzleMetadata(
+      id: 'test:crossing',
+      sourceId: 'test',
+      title: 'Crossing',
+      author: 'Tester',
+      copyright: '',
+      format: PuzzleFormat.puz,
+      width: 3,
+      height: 3,
+      importedAt: DateTime.utc(2026),
+    ),
+    grid: Grid(
+      width: 3,
+      height: 3,
+      cells: const [
+        SolutionCell(solution: 'C', number: 1),
+        SolutionCell(solution: 'A', number: 2),
+        SolutionCell(solution: 'T'),
+        SolutionCell.black,
+        SolutionCell(solution: 'R'),
+        SolutionCell.black,
+        SolutionCell.black,
+        SolutionCell(solution: 'T'),
+        SolutionCell.black,
+      ],
+    ),
+    clues: const [
+      Clue(
+        number: 1,
+        direction: Direction.across,
+        text: 'Across',
+        startRow: 0,
+        startCol: 0,
+        length: 3,
+      ),
+      Clue(
+        number: 2,
+        direction: Direction.down,
+        text: 'Down',
+        startRow: 0,
+        startCol: 1,
+        length: 3,
+      ),
+    ],
+  );
+}
+
+Grid<CellProgress> _crossingProgress() {
+  return Grid(
+    width: 3,
+    height: 3,
+    cells: const [
+      CellProgress(letter: 'C'),
+      CellProgress(letter: 'A'),
+      CellProgress(letter: 'T'),
+      CellProgress.blank,
+      CellProgress.blank,
+      CellProgress.blank,
+      CellProgress.blank,
+      CellProgress.blank,
+      CellProgress.blank,
+    ],
+  );
+}
+
+Grid<CellProgress> _checkedCrossingProgress() {
+  return Grid(
+    width: 3,
+    height: 3,
+    cells: const [
+      CellProgress(letter: 'C'),
+      CellProgress(letter: 'A', state: CellState.checkedCorrect),
+      CellProgress(letter: 'T'),
+      CellProgress.blank,
+      CellProgress.blank,
+      CellProgress.blank,
+      CellProgress.blank,
+      CellProgress.blank,
+      CellProgress.blank,
+    ],
+  );
+}
+
+Puzzle _threeCellPuzzle() {
+  return Puzzle(
+    metadata: PuzzleMetadata(
+      id: 'test:three-cell',
+      sourceId: 'test',
+      title: 'Three Cell',
+      author: 'Tester',
+      copyright: '',
+      format: PuzzleFormat.puz,
+      width: 3,
+      height: 1,
+      importedAt: DateTime.utc(2026),
+    ),
+    grid: Grid(
+      width: 3,
+      height: 1,
+      cells: const [
+        SolutionCell(solution: 'A', number: 1),
+        SolutionCell(solution: 'B', number: 2),
+        SolutionCell(solution: 'C', number: 3),
+      ],
+    ),
+    clues: const [
+      Clue(
+        number: 1,
+        direction: Direction.across,
+        text: 'Across',
+        startRow: 0,
+        startCol: 0,
+        length: 3,
+      ),
+      Clue(
+        number: 1,
+        direction: Direction.down,
+        text: 'A down',
+        startRow: 0,
+        startCol: 0,
+        length: 1,
+      ),
+      Clue(
+        number: 2,
+        direction: Direction.down,
+        text: 'B down',
+        startRow: 0,
+        startCol: 1,
+        length: 1,
+      ),
+      Clue(
+        number: 3,
+        direction: Direction.down,
+        text: 'C down',
+        startRow: 0,
+        startCol: 2,
+        length: 1,
+      ),
+    ],
+  );
+}
+
+Grid<CellProgress> _skipWrapProgress() {
+  return Grid(
+    width: 3,
+    height: 1,
+    cells: const [
+      CellProgress(letter: 'A'),
+      CellProgress.blank,
+      CellProgress.blank,
+    ],
+  );
+}
+
+Puzzle _twoWordPuzzle() {
+  return Puzzle(
+    metadata: PuzzleMetadata(
+      id: 'test:two-word',
+      sourceId: 'test',
+      title: 'Two Word',
+      author: 'Tester',
+      copyright: '',
+      format: PuzzleFormat.puz,
+      width: 2,
+      height: 2,
+      importedAt: DateTime.utc(2026),
+    ),
+    grid: Grid(
+      width: 2,
+      height: 2,
+      cells: const [
+        SolutionCell(solution: 'A', number: 1),
+        SolutionCell(solution: 'B', number: 2),
+        SolutionCell(solution: 'C', number: 3),
+        SolutionCell(solution: 'D', number: 4),
+      ],
+    ),
+    clues: const [
+      Clue(
+        number: 1,
+        direction: Direction.across,
+        text: 'First across',
+        startRow: 0,
+        startCol: 0,
+        length: 2,
+      ),
+      Clue(
+        number: 3,
+        direction: Direction.across,
+        text: 'Second across',
+        startRow: 1,
+        startCol: 0,
+        length: 2,
+      ),
+    ],
+  );
+}
+
+Grid<CellProgress> _twoWordAlmostCompleteProgress() {
+  return Grid(
+    width: 2,
+    height: 2,
+    cells: const [
+      CellProgress(letter: 'A'),
+      CellProgress.blank,
       CellProgress.blank,
       CellProgress.blank,
     ],
@@ -194,6 +522,10 @@ final class _FakeImportRepository implements ImportRepository {
 
   @override
   Future<List<PuzzleMetadata>> getAllMetadata() async => [puzzle.metadata];
+
+  @override
+  Stream<List<PuzzleMetadata>> watchAllMetadata() =>
+      Stream.value([puzzle.metadata]);
 
   @override
   Future<Puzzle?> getPuzzle(String id) async => id == puzzle.id ? puzzle : null;
@@ -218,6 +550,7 @@ final class _FakeSolveRepository implements SolveRepository {
       sessionId: 1,
       progress: progress,
       focus: const FocusPosition(row: 0, col: 0, direction: Direction.across),
+      status: PuzzleStatus.inProgress,
       elapsedMs: 0,
       isPaused: false,
       isResumed: false,
@@ -272,6 +605,10 @@ final class _FakeStatsRepository implements StatsRepository {
 }
 
 final class _FakeAppSettingsRepository implements AppSettingsRepository {
+  const _FakeAppSettingsRepository({this.skipFilledCells = false});
+
+  final bool skipFilledCells;
+
   @override
   Future<bool> getCrashReporting() async => false;
 
@@ -288,7 +625,7 @@ final class _FakeAppSettingsRepository implements AppSettingsRepository {
   Future<bool> getPuzzleReminder() async => false;
 
   @override
-  Future<bool> getSkipFilledCells() async => false;
+  Future<bool> getSkipFilledCells() async => skipFilledCells;
 
   @override
   Future<bool> getSoundsEnabled() async => false;

@@ -5,6 +5,7 @@ import 'package:crosscue/core/domain/models/enums.dart';
 import 'package:crosscue/core/providers/core_providers.dart';
 import 'package:crosscue/core/theme/crossword_theme.dart';
 import 'package:crosscue/features/settings/presentation/providers/settings_providers.dart';
+import 'package:crosscue/features/solve/domain/models/check_result.dart';
 import 'package:crosscue/features/solve/domain/models/focus_position.dart';
 import 'package:crosscue/features/solve/domain/services/clue_progress_calculator.dart';
 import 'package:crosscue/features/solve/presentation/notifiers/solve_notifier.dart';
@@ -13,6 +14,10 @@ import 'package:crosscue/features/solve/presentation/widgets/crossword_grid_pain
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+// Compiled once; reused on every physical-keyboard event and rebus keystroke.
+final _letterRe = RegExp(r'^[A-Za-z]$');
+final _letterFilterRe = RegExp('[A-Za-z]');
 
 /// The interactive crossword grid.
 ///
@@ -44,6 +49,8 @@ class _CrosswordGridState extends ConsumerState<CrosswordGrid>
   late final AnimationController _effectController;
   Map<(int, int), GridCellEffect> _effects = const {};
   SolveState? _previousSolveStateForEffect;
+  bool _hapticsEnabled = true;
+  bool _soundsEnabled = false;
 
   @override
   void initState() {
@@ -56,6 +63,16 @@ class _CrosswordGridState extends ConsumerState<CrosswordGrid>
     // TextField is the sole widget owner of the node (avoids the
     // "child into parent of itself" assertion).
     _focusNode.onKeyEvent = _onKeyEvent;
+    ref.listenManual(
+      hapticsEnabledProvider,
+      (_, next) => _hapticsEnabled = _settingValue(next, fallback: true),
+      fireImmediately: true,
+    );
+    ref.listenManual(
+      soundsEnabledProvider,
+      (_, next) => _soundsEnabled = _settingValue(next, fallback: false),
+      fireImmediately: true,
+    );
   }
 
   @override
@@ -76,26 +93,16 @@ class _CrosswordGridState extends ConsumerState<CrosswordGrid>
     _focusNode.requestFocus();
   }
 
-  bool get _hapticsOn {
-    final async = ref.read(hapticsEnabledProvider);
-    return async.when(
+  bool _settingValue(AsyncValue<bool> value, {required bool fallback}) {
+    return value.when(
       data: (v) => v,
-      loading: () => true,
-      error: (_, __) => true,
-    );
-  }
-
-  bool get _soundsOn {
-    final async = ref.read(soundsEnabledProvider);
-    return async.when(
-      data: (v) => v,
-      loading: () => false,
-      error: (_, __) => false,
+      loading: () => fallback,
+      error: (_, __) => fallback,
     );
   }
 
   void _playFeedbackSound() {
-    if (_soundsOn) {
+    if (_soundsEnabled) {
       unawaited(ref.read(soundPlayerProvider).playFeedback());
     }
   }
@@ -115,7 +122,7 @@ class _CrosswordGridState extends ConsumerState<CrosswordGrid>
       return;
     }
 
-    if (_hapticsOn) HapticFeedback.selectionClick();
+    if (_hapticsEnabled) HapticFeedback.selectionClick();
     final focus =
         ref.read(solveProvider(widget.puzzleId).notifier).tapCell(row, col);
     if (focus != null) widget.onGridFocusSelected?.call(focus);
@@ -139,7 +146,7 @@ class _CrosswordGridState extends ConsumerState<CrosswordGrid>
     // Don't show menu on black cells
     if (puzzle.grid.cell(row, col).isBlack) return;
 
-    if (_hapticsOn) HapticFeedback.mediumImpact();
+    if (_hapticsEnabled) HapticFeedback.mediumImpact();
 
     // Focus the tapped cell first
     final focus =
@@ -214,7 +221,7 @@ class _CrosswordGridState extends ConsumerState<CrosswordGrid>
             autofocus: true,
             textCapitalization: TextCapitalization.characters,
             inputFormatters: [
-              FilteringTextInputFormatter.allow(RegExp('[A-Za-z]')),
+              FilteringTextInputFormatter.allow(_letterFilterRe),
             ],
             decoration: const InputDecoration(
               labelText: 'Cell answer',
@@ -305,7 +312,7 @@ class _CrosswordGridState extends ConsumerState<CrosswordGrid>
     }
 
     final char = event.character;
-    if (char != null && RegExp(r'^[A-Za-z]$').hasMatch(char)) {
+    if (char != null && _letterRe.hasMatch(char)) {
       _playFeedbackSound();
       _pulseIfWordComplete(notifier.inputLetter(char));
       return KeyEventResult.handled;
@@ -459,7 +466,7 @@ class _CrosswordGridState extends ConsumerState<CrosswordGrid>
   }
 
   void _pulseIfWordComplete(bool wordComplete) {
-    if (wordComplete && _hapticsOn) {
+    if (wordComplete && _hapticsEnabled) {
       HapticFeedback.mediumImpact();
     }
     if (wordComplete) {
@@ -468,7 +475,7 @@ class _CrosswordGridState extends ConsumerState<CrosswordGrid>
   }
 
   void _vibrateIfIncorrect(CheckResult result) {
-    if (result.shouldVibrate && _hapticsOn) {
+    if (result.shouldVibrate && _hapticsEnabled) {
       HapticFeedback.vibrate();
     }
     if (result == CheckResult.allCorrect) {

@@ -30,6 +30,16 @@ class PuzzleDao extends DatabaseAccessor<AppDatabase> with _$PuzzleDaoMixin {
     return rows.map(_rowToMetadata).toList();
   }
 
+  /// Watches all puzzles ordered by import date descending.
+  Stream<List<PuzzleMetadata>> watchAllMetadata() {
+    return (select(puzzlesTable)
+          ..orderBy([
+            (t) => OrderingTerm.desc(t.createdAt),
+          ]))
+        .watch()
+        .map((rows) => rows.map(_rowToMetadata).toList());
+  }
+
   /// Returns a single puzzle's metadata, or null if not found.
   Future<PuzzleMetadata?> getMetadata(String id) async {
     final row = await (select(puzzlesTable)..where((t) => t.id.equals(id)))

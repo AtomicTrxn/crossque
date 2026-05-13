@@ -86,6 +86,22 @@ void main() {
         isFalse,
       );
     });
+
+    test('filledCellCompletionFraction counts typed cells for progress UI', () {
+      final puzzle = _puzzle();
+      final progress = _progress({
+        (0, 0): const CellProgress(letter: 'A'),
+        (1, 0): const CellProgress(letter: 'C'),
+      });
+
+      expect(
+        ClueProgressCalculator.filledCellCompletionFraction(
+          puzzle: puzzle,
+          progress: progress,
+        ),
+        2 / 3,
+      );
+    });
   });
 }
 

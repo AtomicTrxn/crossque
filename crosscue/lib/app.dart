@@ -26,14 +26,23 @@ class CrosscueApp extends ConsumerStatefulWidget {
 }
 
 class _CrosscueAppState extends ConsumerState<CrosscueApp> {
+  late final _CrosshareLifecycleObserver _lifecycleObserver;
+
   @override
   void initState() {
     super.initState();
+    _lifecycleObserver = _CrosshareLifecycleObserver(ref);
+    WidgetsBinding.instance.addObserver(_lifecycleObserver);
     _installCrashHandlers();
-    // Register the app-lifecycle observer once for the full app lifetime.
-    // Must be read here (not watched) so the keepAlive provider is created
-    // exactly once and is not re-created on rebuilds.
-    ref.read(appLifecycleObserverProvider);
+    ref.listenManual(
+      crashReportingProvider,
+      (_, next) {
+        next.whenData((enabled) {
+          ref.read(crashReporterProvider).init(enabled: enabled);
+        });
+      },
+      fireImmediately: true,
+    );
     // Trigger auto-download on first launch (post-frame so providers are ready).
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.read(crosshareAutoDownloadServiceProvider).attemptIfNeeded();
@@ -55,10 +64,13 @@ class _CrosscueAppState extends ConsumerState<CrosscueApp> {
   }
 
   @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(_lifecycleObserver);
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    ref.watch(crashReportingProvider).whenData((enabled) {
-      ref.read(crashReporterProvider).init(enabled: enabled);
-    });
     final router = ref.watch(appRouterProvider);
     final themeModeAsync = ref.watch(themeModeProvider);
     final themeMode = themeModeAsync.when(
@@ -79,5 +91,18 @@ class _CrosscueAppState extends ConsumerState<CrosscueApp> {
         );
       },
     );
+  }
+}
+
+class _CrosshareLifecycleObserver extends WidgetsBindingObserver {
+  _CrosshareLifecycleObserver(this._ref);
+
+  final WidgetRef _ref;
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      _ref.read(crosshareAutoDownloadServiceProvider).attemptIfNeeded();
+    }
   }
 }

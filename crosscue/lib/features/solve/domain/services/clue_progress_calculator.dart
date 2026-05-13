@@ -66,4 +66,23 @@ class ClueProgressCalculator {
     );
     return (lockedCorrect.length / clues.length).clamp(0.0, 1.0);
   }
+
+  static double filledCellCompletionFraction({
+    required Puzzle puzzle,
+    required Grid<CellProgress> progress,
+  }) {
+    var fillable = 0;
+    var filled = 0;
+
+    for (var row = 0; row < puzzle.height; row++) {
+      for (var col = 0; col < puzzle.width; col++) {
+        if (puzzle.grid.cell(row, col).isBlack) continue;
+        fillable++;
+        if (progress.cell(row, col).letter.isNotEmpty) filled++;
+      }
+    }
+
+    if (fillable == 0) return 0;
+    return (filled / fillable).clamp(0.0, 1.0);
+  }
 }
