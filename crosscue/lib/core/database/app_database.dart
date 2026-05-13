@@ -153,9 +153,11 @@ class AppDatabase extends _$AppDatabase {
 
   /// Seeds the 'crosshare_daily_mini' source row during schema migration.
   ///
-  /// Uses raw SQL with only the columns present in the minimal v1 test schema
-  /// so the migration is robust across all existing DB shapes. Full metadata
-  /// is written for fresh installs via [_seedBuiltInSources].
+  /// This intentionally duplicates the fresh-install seed row in
+  /// [_seedBuiltInSources], but uses raw SQL with only the columns present in
+  /// the minimal historical schemas. That keeps v1/v2 databases migratable even
+  /// when newer ORM columns did not exist yet. The migration tests in
+  /// `test/core/database/app_database_test.dart` cover this path.
   Future<void> _seedCrosshareSource() async {
     final now = DateTime.now().toUtc();
     final nowMs = now.millisecondsSinceEpoch;

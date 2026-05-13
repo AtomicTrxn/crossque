@@ -15,10 +15,10 @@ final puzzleListProvider = PuzzleListProvider._();
 final class PuzzleListProvider extends $FunctionalProvider<
         AsyncValue<List<PuzzleMetadata>>,
         List<PuzzleMetadata>,
-        FutureOr<List<PuzzleMetadata>>>
+        Stream<List<PuzzleMetadata>>>
     with
         $FutureModifier<List<PuzzleMetadata>>,
-        $FutureProvider<List<PuzzleMetadata>> {
+        $StreamProvider<List<PuzzleMetadata>> {
   PuzzleListProvider._()
       : super(
           from: null,
@@ -35,14 +35,14 @@ final class PuzzleListProvider extends $FunctionalProvider<
 
   @$internal
   @override
-  $FutureProviderElement<List<PuzzleMetadata>> $createElement(
+  $StreamProviderElement<List<PuzzleMetadata>> $createElement(
           $ProviderPointer pointer) =>
-      $FutureProviderElement(pointer);
+      $StreamProviderElement(pointer);
 
   @override
-  FutureOr<List<PuzzleMetadata>> create(Ref ref) {
+  Stream<List<PuzzleMetadata>> create(Ref ref) {
     return puzzleList(ref);
   }
 }
 
-String _$puzzleListHash() => r'e78b241472a7887b9104b16d5eb7fe5e53452cdf';
+String _$puzzleListHash() => r'd1f50eec428c3100d22d9f237e762e13e591cccf';

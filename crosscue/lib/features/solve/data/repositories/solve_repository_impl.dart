@@ -17,11 +17,11 @@ class SolveRepositoryImpl implements SolveRepository {
   // Session lifecycle
   // ---------------------------------------------------------------------------
 
-  /// Finds an existing in-progress session for [puzzle.id], or creates one.
+  /// Finds an existing session for [puzzle.id], or creates one.
   /// Restores cell-progress from DB when resuming.
   @override
   Future<SessionLoadResult> createOrResumeSession(Puzzle puzzle) async {
-    final existing = await dao.findActiveSession(puzzle.id);
+    final existing = await dao.getLatestSession(puzzle.id);
 
     if (existing != null) {
       final rows = await dao.loadCellProgress(existing.id);
@@ -35,6 +35,7 @@ class SolveRepositoryImpl implements SolveRepository {
         sessionId: existing.id,
         progress: progress,
         focus: focus,
+        status: _statusFromDb(existing.status, existing.completionType),
         elapsedMs: existing.elapsedMs,
         isPaused: existing.isPaused,
         isResumed: true,
@@ -75,6 +76,7 @@ class SolveRepositoryImpl implements SolveRepository {
       sessionId: id,
       progress: blankProgress,
       focus: focus,
+      status: PuzzleStatus.inProgress,
       elapsedMs: 0,
       isPaused: false,
       isResumed: false,
@@ -201,4 +203,18 @@ class SolveRepositoryImpl implements SolveRepository {
         PuzzleStatus.solvedWithReveal => 'completed',
         PuzzleStatus.revealed => 'revealed',
       };
+
+  PuzzleStatus _statusFromDb(String status, String? completionType) {
+    return switch (status) {
+      'revealed' => PuzzleStatus.revealed,
+      'completed' => switch (completionType) {
+          'revealed' => PuzzleStatus.revealed,
+          'hinted' => PuzzleStatus.solvedWithReveal,
+          'checked' => PuzzleStatus.solvedWithHelp,
+          _ => PuzzleStatus.solved,
+        },
+      'in_progress' => PuzzleStatus.inProgress,
+      _ => PuzzleStatus.unsolved,
+    };
+  }
 }

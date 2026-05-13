@@ -84,6 +84,11 @@ class CluePanel extends StatelessWidget {
 const double _kHeaderH = 28.0;
 const double _kRowPadH = 10.0;
 const double _kRowH = 52.0;
+
+// Each clue column is rendered as a long virtual list that repeats the real
+// clue list. The initial anchor sits at `count * _kVirtualLoopCount`, giving
+// users room to scroll in either direction while `_targetOffsetForClueIndex`
+// chooses the nearest repeated copy of the requested clue.
 const int _kVirtualLoopCount = 500;
 
 class _ClueColumn extends StatefulWidget {

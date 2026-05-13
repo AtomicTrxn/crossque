@@ -7,7 +7,7 @@ import 'package:crosscue/features/import/data/parsers/puz_parser.dart';
 import 'package:crosscue/features/import/domain/models/parse_error.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import '../../helpers/puz_fixture_builder.dart';
+import '../../../../helpers/puz_fixture_builder.dart';
 
 void main() {
   const parser = PuzParser();

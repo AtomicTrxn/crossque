@@ -1,5 +1,6 @@
 import 'package:crosscue/core/theme/design_tokens.dart';
 import 'package:crosscue/core/theme/theme_colors.dart';
+import 'package:crosscue/core/utils/time_format.dart';
 import 'package:crosscue/features/archive/domain/models/archive_entry.dart';
 import 'package:flutter/material.dart';
 
@@ -17,10 +18,17 @@ import 'package:flutter/material.dart';
 ///   3. In progress → hourglass (mid-primary)
 ///   4. Not started (or no entry yet) → empty circle (subtle)
 class ArchiveEntryStatus {
-  const ArchiveEntryStatus({required this.icon, required this.color});
+  const ArchiveEntryStatus({
+    required this.icon,
+    required this.color,
+    this.noteLabel,
+    this.noteColor,
+  });
 
   final IconData icon;
   final Color color;
+  final String? noteLabel;
+  final Color? noteColor;
 
   /// Resolves the visual status for [entry]. A null [entry] is treated as
   /// "not started" since absence of an archive row means no progress has
@@ -39,15 +47,26 @@ class ArchiveEntryStatus {
       );
     }
     if (entry.isCompleted || entry.isRevealed) {
+      final isRevealed = entry.isRevealed && !entry.isCompleted;
+      final elapsed = entry.elapsedMs == null ? '' : formatMs(entry.elapsedMs!);
+      final label = isRevealed
+          ? 'Revealed'
+          : 'Completed${elapsed.isNotEmpty ? ' · $elapsed' : ''}';
       return ArchiveEntryStatus(
         icon: Icons.check_circle_outline_rounded,
         color: context.crosscueCorrect,
+        noteLabel: label,
+        noteColor:
+            isRevealed ? context.crosscueOnSurface2 : context.crosscueCorrect,
       );
     }
     // In progress
-    return const ArchiveEntryStatus(
+    final elapsed = entry.elapsedMs == null ? '' : formatMs(entry.elapsedMs!);
+    return ArchiveEntryStatus(
       icon: Icons.timelapse_rounded,
       color: CrosscueColors.primaryMid,
+      noteLabel: 'In progress${elapsed.isNotEmpty ? ' · $elapsed' : ''}',
+      noteColor: CrosscueColors.primaryMid,
     );
   }
 }

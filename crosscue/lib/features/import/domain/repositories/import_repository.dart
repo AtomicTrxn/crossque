@@ -19,6 +19,9 @@ abstract class ImportRepository {
   /// Returns metadata for every puzzle currently stored in the database.
   Future<List<PuzzleMetadata>> getAllMetadata();
 
+  /// Watches metadata for every puzzle currently stored in the database.
+  Stream<List<PuzzleMetadata>> watchAllMetadata();
+
   /// Returns the full [Puzzle] for [id], or `null` if not found.
   Future<Puzzle?> getPuzzle(String id);
 

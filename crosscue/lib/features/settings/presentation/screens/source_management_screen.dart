@@ -1,6 +1,7 @@
 import 'package:crosscue/core/domain/models/enums.dart';
 import 'package:crosscue/core/routing/routes.dart';
 import 'package:crosscue/core/theme/design_tokens.dart';
+import 'package:crosscue/core/theme/theme_colors.dart';
 import 'package:crosscue/features/import/domain/repositories/puzzle_source.dart';
 import 'package:crosscue/features/import/presentation/providers/source_registry_provider.dart';
 import 'package:flutter/material.dart' hide Router;
@@ -54,7 +55,7 @@ class _CrosshareTile extends StatelessWidget {
     return ListTile(
       leading: Icon(
         Icons.check_circle_outline,
-        color: Theme.of(context).colorScheme.primary,
+        color: context.crosscuePrimary,
       ),
       title: const Text('Crosshare Daily Mini'),
       subtitle: const Text('Free community crosswords · crosshare.org'),
@@ -128,7 +129,6 @@ class _SourceTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
     final status = source.licenseStatus;
     final enabled = source.enabled &&
         status != LicenseStatus.needsReview &&
@@ -142,7 +142,7 @@ class _SourceTile extends StatelessWidget {
             : enabled
                 ? Icons.check_circle_outline
                 : Icons.block_outlined,
-        color: enabled ? colorScheme.primary : colorScheme.onSurfaceVariant,
+        color: enabled ? context.crosscuePrimary : context.crosscueOnSurface3,
       ),
       title: Text(source.displayName),
       subtitle: Text(_statusText(source)),
@@ -175,7 +175,7 @@ class _SectionHeader extends StatelessWidget {
       child: Text(
         label.toUpperCase(),
         style: Theme.of(context).textTheme.labelSmall?.copyWith(
-              color: Theme.of(context).colorScheme.primary,
+              color: context.crosscuePrimary,
               letterSpacing: 1.2,
             ),
       ),

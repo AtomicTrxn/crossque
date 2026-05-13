@@ -1,5 +1,6 @@
 import 'dart:math' as math;
 
+import 'package:crosscue/core/theme/theme_colors.dart';
 import 'package:flutter/material.dart';
 
 class CrosscueNavIcon extends StatelessWidget {
@@ -20,8 +21,7 @@ class CrosscueNavIcon extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = IconTheme.of(context).color ??
-        Theme.of(context).colorScheme.onSurfaceVariant;
+    final color = IconTheme.of(context).color ?? context.crosscueOnSurface3;
     return SizedBox.square(
       dimension: 24,
       child: CustomPaint(

@@ -1,15 +1,23 @@
 import 'package:crosscue/core/routing/routes.dart';
 import 'package:crosscue/core/theme/design_tokens.dart';
 import 'package:crosscue/core/theme/theme_colors.dart';
-import 'package:crosscue/core/utils/time_format.dart';
 import 'package:crosscue/features/archive/domain/models/archive_entry.dart';
 import 'package:crosscue/features/archive/presentation/providers/archive_providers.dart';
-import 'package:crosscue/features/archive/presentation/widgets/archive_entry_status.dart';
-import 'package:crosscue/features/home/presentation/providers/home_providers.dart';
+import 'package:crosscue/features/archive/presentation/widgets/puzzle_list_tile.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
+
+const _filterChipLabelStyle = TextStyle(
+  fontSize: CrosscueTypography.bodySmall,
+);
+const _archiveMetaStyle = TextStyle(fontSize: CrosscueTypography.label);
+const _sortButtonStyle = TextStyle(
+  fontSize: CrosscueTypography.label,
+  fontWeight: FontWeight.w500,
+  color: CrosscueColors.primary,
+);
 
 // ---------------------------------------------------------------------------
 // Sort / filter enums
@@ -70,10 +78,25 @@ class _ArchiveScreenState extends ConsumerState<ArchiveScreen> {
                     : ListView.builder(
                         padding: EdgeInsets.zero,
                         itemCount: sorted.length,
-                        itemBuilder: (ctx, i) => _ArchiveRow(
-                          entry: sorted[i],
-                          onDelete: () => _confirmDelete(ctx, sorted[i]),
-                        ),
+                        itemBuilder: (ctx, i) {
+                          final entry = sorted[i];
+                          return PuzzleListTile(
+                            title: entry.title,
+                            entry: entry,
+                            subtitle: _archiveSubtitle(entry),
+                            iconWidth: 22,
+                            iconSize: 18,
+                            iconGap: 10,
+                            dividerIndent: 52,
+                            showStatusNote: true,
+                            onTap: () => context.push(
+                              Routes.solveFor(
+                                Uri.encodeComponent(entry.puzzleId),
+                              ),
+                            ),
+                            onLongPress: () => _confirmDelete(ctx, entry),
+                          );
+                        },
                       ),
               ),
             ],
@@ -140,7 +163,7 @@ class _ArchiveScreenState extends ConsumerState<ArchiveScreen> {
           ),
           FilledButton(
             style: FilledButton.styleFrom(
-              backgroundColor: Theme.of(ctx).colorScheme.error,
+              backgroundColor: ctx.crosscueError,
               foregroundColor: Colors.white,
             ),
             onPressed: () => Navigator.of(ctx).pop(true),
@@ -152,8 +175,6 @@ class _ArchiveScreenState extends ConsumerState<ArchiveScreen> {
 
     if (confirmed != true) return;
     await ref.read(archiveRepositoryProvider).deletePuzzle(entry.puzzleId);
-    ref.invalidate(archiveEntriesProvider);
-    ref.invalidate(puzzleListProvider);
   }
 }
 
@@ -236,8 +257,7 @@ class _FilterChip extends StatelessWidget {
         ),
         child: Text(
           label,
-          style: TextStyle(
-            fontSize: CrosscueTypography.bodySmall,
+          style: _filterChipLabelStyle.copyWith(
             fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
             color:
                 selected ? CrosscueColors.primary : context.crosscueOnSurface3,
@@ -274,8 +294,7 @@ class _SortBar extends StatelessWidget {
         children: [
           Text(
             '$count ${count == 1 ? 'puzzle' : 'puzzles'}',
-            style: TextStyle(
-              fontSize: CrosscueTypography.label,
+            style: _archiveMetaStyle.copyWith(
               color: context.crosscueOnSurface3,
             ),
           ),
@@ -289,11 +308,7 @@ class _SortBar extends StatelessWidget {
               children: [
                 Text(
                   'Sort: ${_sortLabel(sort)} ↓',
-                  style: const TextStyle(
-                    fontSize: CrosscueTypography.label,
-                    fontWeight: FontWeight.w500,
-                    color: CrosscueColors.primary,
-                  ),
+                  style: _sortButtonStyle,
                 ),
               ],
             ),
@@ -324,129 +339,9 @@ class _SortBar extends StatelessWidget {
       };
 }
 
-// ---------------------------------------------------------------------------
-// Archive row (flat design)
-// ---------------------------------------------------------------------------
-
-class _ArchiveRow extends StatelessWidget {
-  const _ArchiveRow({required this.entry, required this.onDelete});
-
-  final ArchiveEntry entry;
-  final VoidCallback onDelete;
-
-  @override
-  Widget build(BuildContext context) {
-    final status = ArchiveEntryStatus.of(context, entry);
-    final subtitle = _subtitleParts(entry).join(' · ');
-    final (statusNote, statusColor) = _statusNote(context, entry);
-    final onSurface3 = context.crosscueOnSurface3;
-
-    return Column(
-      children: [
-        InkWell(
-          onTap: () => context
-              .push(Routes.solveFor(Uri.encodeComponent(entry.puzzleId))),
-          onLongPress: onDelete,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(
-              vertical: CrosscueSpacing.rowV,
-              horizontal: CrosscueSpacing.screenH,
-            ),
-            child: Row(
-              children: [
-                // Status icon — 22dp wide
-                SizedBox(
-                  width: 22,
-                  child: Icon(status.icon, size: 18, color: status.color),
-                ),
-                const SizedBox(width: 10),
-                // Text block
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        entry.title,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          fontSize: CrosscueTypography.body,
-                          fontWeight: FontWeight.w500,
-                          color: context.crosscueOnSurface1,
-                        ),
-                      ),
-                      if (subtitle.isNotEmpty)
-                        Text(
-                          subtitle,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
-                            fontSize: CrosscueTypography.label,
-                            color: onSurface3,
-                          ),
-                        ),
-                      if (statusNote != null)
-                        Text(
-                          statusNote,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
-                            fontSize: CrosscueTypography.label,
-                            fontWeight: FontWeight.w500,
-                            color: statusColor,
-                          ),
-                        ),
-                    ],
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Icon(
-                  Icons.chevron_right,
-                  size: 18,
-                  color: onSurface3,
-                ),
-              ],
-            ),
-          ),
-        ),
-        Divider(
-          height: 1,
-          indent:
-              52, // 16 screenH + 22 icon col + 10 gap + 4 extra = 52 per spec
-          endIndent: 0,
-          color: context.crosscueDivider,
-        ),
-      ],
-    );
-  }
-
-  List<String> _subtitleParts(ArchiveEntry e) {
-    final parts = <String>[];
-    final date = e.publishDate ?? e.importedAt;
-    parts.add(DateFormat('d MMM yyyy').format(date.toLocal()));
-    parts.add(e.sizeLabel);
-    return parts;
-  }
-
-  (String?, Color) _statusNote(BuildContext context, ArchiveEntry e) {
-    if (e.isNotStarted) return (null, Colors.transparent);
-    if (e.isInProgress) {
-      final t = e.elapsedMs != null ? formatMs(e.elapsedMs!) : '';
-      return (
-        'In progress${t.isNotEmpty ? ' · $t' : ''}',
-        CrosscueColors.primaryMid,
-      );
-    }
-    if (e.isCompleted) {
-      final t = e.elapsedMs != null ? formatMs(e.elapsedMs!) : '';
-      return (
-        'Completed${t.isNotEmpty ? ' · $t' : ''}',
-        context.crosscueCorrect,
-      );
-    }
-    if (e.isRevealed) return ('Revealed', context.crosscueOnSurface2);
-    return (null, Colors.transparent);
-  }
+String _archiveSubtitle(ArchiveEntry entry) {
+  final date = entry.publishDate ?? entry.importedAt;
+  return '${DateFormat('d MMM yyyy').format(date.toLocal())} · ${entry.sizeLabel}';
 }
 
 // ---------------------------------------------------------------------------
@@ -465,7 +360,7 @@ class _EmptyArchive extends StatelessWidget {
           Icon(
             Icons.inbox_outlined,
             size: 64,
-            color: Theme.of(context).colorScheme.onSurfaceVariant,
+            color: context.crosscueOnSurface3,
           ),
           const SizedBox(height: 16),
           Text(
@@ -476,7 +371,7 @@ class _EmptyArchive extends StatelessWidget {
           Text(
             'Import a puzzle to get started.',
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  color: context.crosscueOnSurface3,
                 ),
           ),
         ],
@@ -494,7 +389,7 @@ class _EmptyFilter extends StatelessWidget {
       child: Text(
         'No puzzles match this filter.',
         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              color: Theme.of(context).colorScheme.onSurfaceVariant,
+              color: context.crosscueOnSurface3,
             ),
       ),
     );

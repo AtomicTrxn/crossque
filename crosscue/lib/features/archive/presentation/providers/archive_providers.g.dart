@@ -57,26 +57,20 @@ final class ArchiveRepositoryProvider extends $FunctionalProvider<
 String _$archiveRepositoryHash() => r'bdb7747e7fb12f4a230ef450d0ce022de5bc0752';
 
 /// All archive entries (puzzles + their latest session status), import-date desc.
-/// Invalidated by the archive screen after a delete, and by ImportNotifier after
-/// a successful import.
 
 @ProviderFor(archiveEntries)
 final archiveEntriesProvider = ArchiveEntriesProvider._();
 
 /// All archive entries (puzzles + their latest session status), import-date desc.
-/// Invalidated by the archive screen after a delete, and by ImportNotifier after
-/// a successful import.
 
 final class ArchiveEntriesProvider extends $FunctionalProvider<
         AsyncValue<List<ArchiveEntry>>,
         List<ArchiveEntry>,
-        FutureOr<List<ArchiveEntry>>>
+        Stream<List<ArchiveEntry>>>
     with
         $FutureModifier<List<ArchiveEntry>>,
-        $FutureProvider<List<ArchiveEntry>> {
+        $StreamProvider<List<ArchiveEntry>> {
   /// All archive entries (puzzles + their latest session status), import-date desc.
-  /// Invalidated by the archive screen after a delete, and by ImportNotifier after
-  /// a successful import.
   ArchiveEntriesProvider._()
       : super(
           from: null,
@@ -93,14 +87,14 @@ final class ArchiveEntriesProvider extends $FunctionalProvider<
 
   @$internal
   @override
-  $FutureProviderElement<List<ArchiveEntry>> $createElement(
+  $StreamProviderElement<List<ArchiveEntry>> $createElement(
           $ProviderPointer pointer) =>
-      $FutureProviderElement(pointer);
+      $StreamProviderElement(pointer);
 
   @override
-  FutureOr<List<ArchiveEntry>> create(Ref ref) {
+  Stream<List<ArchiveEntry>> create(Ref ref) {
     return archiveEntries(ref);
   }
 }
 
-String _$archiveEntriesHash() => r'b28f0e7cb40360a2cf8a33617dc74308a184f2a4';
+String _$archiveEntriesHash() => r'543ad6e397de62f7b5368580a82be21ed958d5ae';

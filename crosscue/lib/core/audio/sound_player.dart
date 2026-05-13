@@ -2,6 +2,7 @@ import 'dart:math' as math;
 import 'dart:typed_data';
 
 import 'package:audioplayers/audioplayers.dart';
+import 'package:flutter/foundation.dart';
 
 class SoundPlayer {
   SoundPlayer() : _player = AudioPlayer();
@@ -10,9 +11,13 @@ class SoundPlayer {
   Uint8List? _beepBytes;
 
   Future<void> playFeedback() async {
-    _beepBytes ??= _generateBeep();
-    await _player.stop();
-    await _player.play(BytesSource(_beepBytes!));
+    try {
+      _beepBytes ??= _generateBeep();
+      await _player.stop();
+      await _player.play(BytesSource(_beepBytes!));
+    } catch (error, stackTrace) {
+      debugPrint('[SoundPlayer] feedback playback failed: $error\n$stackTrace');
+    }
   }
 
   Future<void> dispose() => _player.dispose();

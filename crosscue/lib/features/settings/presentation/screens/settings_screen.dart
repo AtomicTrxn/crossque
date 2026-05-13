@@ -1,7 +1,9 @@
+import 'package:crosscue/core/constants/app_links.dart';
 import 'package:crosscue/core/domain/models/enums.dart';
 import 'package:crosscue/core/providers/core_providers.dart';
 import 'package:crosscue/core/routing/routes.dart';
 import 'package:crosscue/core/theme/design_tokens.dart';
+import 'package:crosscue/core/theme/theme_colors.dart';
 import 'package:crosscue/features/settings/presentation/providers/settings_providers.dart';
 import 'package:crosscue/features/settings/presentation/widgets/settings_rows.dart';
 import 'package:flutter/material.dart';
@@ -170,8 +172,6 @@ class _AboutDialog extends StatelessWidget {
 
   final String? version;
 
-  static const _githubUrl = 'https://github.com/AtomicTrxn/crosscue';
-
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
@@ -203,7 +203,7 @@ class _AboutDialog extends StatelessWidget {
             textAlign: TextAlign.center,
             style: TextStyle(
               fontSize: 14,
-              color: Theme.of(context).colorScheme.onSurfaceVariant,
+              color: context.crosscueOnSurface3,
             ),
           ),
           if (version != null) ...[
@@ -212,14 +212,14 @@ class _AboutDialog extends StatelessWidget {
               version!,
               style: TextStyle(
                 fontSize: 13,
-                color: Theme.of(context).colorScheme.onSurfaceVariant,
+                color: context.crosscueOnSurface3,
               ),
             ),
           ],
           const SizedBox(height: 12),
           TextButton.icon(
             onPressed: () async {
-              final uri = Uri.parse(_githubUrl);
+              final uri = Uri.parse(AppLinks.githubRepository);
               await launchUrl(uri, mode: LaunchMode.externalApplication);
             },
             icon: const Icon(Icons.open_in_new),

@@ -273,17 +273,19 @@ void main() {
       final exportResult = await service.generateExportBytes();
       expect(exportResult.isOk, isTrue);
 
-      // Import into fresh DB.
-      final db2 = AppDatabase.forTesting(NativeDatabase.memory());
-      addTearDown(db2.close);
-      final service2 = StatsExportServiceImpl(dao: db2.statsDao);
+      // Import into a fresh DB after closing the export DB. Keeping two Drift
+      // database instances open in the same test triggers Drift's multiple
+      // database warning, even when both use in-memory executors.
+      await db.close();
+      db = AppDatabase.forTesting(NativeDatabase.memory());
+      service = StatsExportServiceImpl(dao: db.statsDao);
 
-      final importResult = await service2.importFromBytes(exportResult.value);
+      final importResult = await service.importFromBytes(exportResult.value);
       expect(importResult.isOk, isTrue);
       expect(importResult.value, equals(1));
 
       // Re-importing is idempotent.
-      final reimportResult = await service2.importFromBytes(exportResult.value);
+      final reimportResult = await service.importFromBytes(exportResult.value);
       expect(reimportResult.isOk, isTrue);
       expect(reimportResult.value, equals(0));
     });
