@@ -6,10 +6,9 @@ import 'package:go_router/go_router.dart';
 /// Persistent 4-tab shell. Shown for Home, Archive, Stats, and Settings tabs.
 /// Full-page routes (Solve, Import, Onboarding) push over this shell.
 ///
-/// Crosshare auto-download is triggered by [appLifecycleObserverProvider]
-/// (registered in [CrosscueApp.initState]), not from here. Keeping lifecycle
-/// observation out of the shell prevents spurious downloads when the app is
-/// resumed while a solve is in progress.
+/// Crosshare auto-download is triggered by the root app lifecycle observer, not
+/// from here. Keeping lifecycle observation out of the shell prevents spurious
+/// downloads when the app is resumed while a solve is in progress.
 class AppShell extends ConsumerWidget {
   const AppShell({super.key, required this.navigationShell});
 
@@ -49,10 +48,12 @@ class AppShell extends ConsumerWidget {
   }
 
   void _onDestinationSelected(int index) {
+    final isSettingsTab = index == 3;
     navigationShell.goBranch(
       index,
-      // Re-tap on the current tab scrolls to top / pops to root.
-      initialLocation: index == navigationShell.currentIndex,
+      // Re-tap on the current tab scrolls to top / pops to root. Settings is
+      // always rooted so tapping it never reopens the last settings sub-page.
+      initialLocation: isSettingsTab || index == navigationShell.currentIndex,
     );
   }
 }

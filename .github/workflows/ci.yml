@@ -127,11 +127,11 @@ jobs:
           git diff --exit-code
 
   # ── Stage 3 (gated on all stage 2 jobs) ──────────────────────────────────────
-  # Disabled by default on regular CI. Only runs when explicitly requested.
-  # Release pipeline skips via skip-debug-apk: true
+  # Disabled on regular pull_request/push CI so PRs only run checks.
+  # Reusable workflow callers can opt in by passing skip-debug-apk: false.
   build-debug-apk:
     name: Build debug APK
-    if: ${{ inputs.skip-debug-apk == false }}
+    if: ${{ github.event_name == 'workflow_call' && inputs.skip-debug-apk == false }}
     needs: [analyze, test, generated]
     runs-on: ubuntu-latest
     defaults:

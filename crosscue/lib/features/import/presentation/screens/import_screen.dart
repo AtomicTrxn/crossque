@@ -1,7 +1,6 @@
 import 'package:crosscue/core/routing/routes.dart';
 import 'package:crosscue/core/theme/design_tokens.dart';
-import 'package:crosscue/features/archive/presentation/providers/archive_providers.dart';
-import 'package:crosscue/features/home/presentation/providers/home_providers.dart';
+import 'package:crosscue/core/theme/theme_colors.dart';
 import 'package:crosscue/features/import/presentation/notifiers/import_notifier.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -50,7 +49,7 @@ class _ImportScreenState extends ConsumerState<ImportScreen> {
             Icon(
               Icons.file_open_outlined,
               size: 64,
-              color: Theme.of(context).colorScheme.primary,
+              color: context.crosscuePrimary,
             ),
             const SizedBox(height: 24),
             Text(
@@ -63,7 +62,7 @@ class _ImportScreenState extends ConsumerState<ImportScreen> {
               'Choose a crossword file from this device. Crosscue validates '
               'the file before storing the parsed puzzle locally.',
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    color: context.crosscueOnSurface3,
                   ),
               textAlign: TextAlign.center,
             ),
@@ -106,9 +105,6 @@ class _ImportScreenState extends ConsumerState<ImportScreen> {
   }
 
   void _showSuccessAndNavigate(ImportSuccess state) {
-    // Invalidate the home list so it refreshes when we navigate there.
-    ref.invalidate(puzzleListProvider);
-    ref.invalidate(archiveEntriesProvider);
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text('Imported "${state.title}" successfully!'),
@@ -205,7 +201,7 @@ class _InfoSheet extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, size: 48, color: Theme.of(context).colorScheme.primary),
+            Icon(icon, size: 48, color: context.crosscuePrimary),
             const SizedBox(height: 16),
             Text(title, style: Theme.of(context).textTheme.titleLarge),
             const SizedBox(height: 12),

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:crosscue/core/database/app_database.dart';
 import 'package:crosscue/core/domain/models/enums.dart';
 import 'package:crosscue/core/domain/models/grid.dart';
@@ -41,6 +43,50 @@ class ArchiveRepositoryImpl implements ArchiveRepository {
     }
 
     return entries;
+  }
+
+  @override
+  Stream<List<ArchiveEntry>> watchArchiveEntries() {
+    late final StreamController<List<ArchiveEntry>> controller;
+    final subscriptions = <StreamSubscription<Object?>>[];
+    var emitQueued = false;
+    var disposed = false;
+
+    Future<void> emit() async {
+      if (disposed || controller.isClosed) return;
+      try {
+        controller.add(await getArchiveEntries());
+      } catch (error, stackTrace) {
+        controller.addError(error, stackTrace);
+      }
+    }
+
+    void queueEmit() {
+      if (emitQueued || disposed) return;
+      emitQueued = true;
+      scheduleMicrotask(() {
+        emitQueued = false;
+        unawaited(emit());
+      });
+    }
+
+    controller = StreamController<List<ArchiveEntry>>(
+      onListen: () {
+        subscriptions
+          ..add(puzzleDao.watchAllMetadata().listen((_) => queueEmit()))
+          ..add(sessionDao.watchAllSessions().listen((_) => queueEmit()))
+          ..add(sessionDao.watchAllCellProgress().listen((_) => queueEmit()));
+        queueEmit();
+      },
+      onCancel: () async {
+        disposed = true;
+        for (final subscription in subscriptions) {
+          await subscription.cancel();
+        }
+      },
+    );
+
+    return controller.stream;
   }
 
   // ---------------------------------------------------------------------------
@@ -112,7 +158,7 @@ class ArchiveRepositoryImpl implements ArchiveRepository {
       rows: progressRows,
     );
 
-    return ClueProgressCalculator.lockedClueCompletionFraction(
+    return ClueProgressCalculator.filledCellCompletionFraction(
       puzzle: puzzle,
       progress: progress,
     );

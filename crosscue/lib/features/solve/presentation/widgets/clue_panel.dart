@@ -83,7 +83,12 @@ class CluePanel extends StatelessWidget {
 
 const double _kHeaderH = 28.0;
 const double _kRowPadH = 10.0;
-const double _kRowH = 42.0;
+const double _kRowH = 52.0;
+
+// Each clue column is rendered as a long virtual list that repeats the real
+// clue list. The initial anchor sits at `count * _kVirtualLoopCount`, giving
+// users room to scroll in either direction while `_targetOffsetForClueIndex`
+// chooses the nearest repeated copy of the requested clue.
 const int _kVirtualLoopCount = 500;
 
 class _ClueColumn extends StatefulWidget {
@@ -401,22 +406,27 @@ class _ClueRow extends StatelessWidget {
   }
 }
 
+// Compiled once at first use; reused on every clue-selection change.
+final _directionNamesRe = RegExp(
+  r'\b(\d+)\s*[- ]?\s*(Across|Down)\b',
+  caseSensitive: false,
+);
+final _shortNamesRe = RegExp(
+  r'\b(\d+)\s*[- ]?([AD])\b',
+  caseSensitive: false,
+);
+
 Set<String> _referencedClueKeys(String? clueText, List<Clue> clues) {
   if (clueText == null || clueText.isEmpty) return const {};
 
   final validKeys = clues.map(_clueKey).toSet();
   final references = <String>{};
-  final directionNames = RegExp(
-    r'\b(\d+)\s*[- ]?\s*(Across|Down)\b',
-    caseSensitive: false,
-  );
-  final shortNames = RegExp(r'\b(\d+)\s*[- ]?([AD])\b', caseSensitive: false);
 
-  for (final match in directionNames.allMatches(clueText)) {
+  for (final match in _directionNamesRe.allMatches(clueText)) {
     final key = '${match.group(1)}:${match.group(2)![0].toLowerCase()}';
     if (validKeys.contains(key)) references.add(key);
   }
-  for (final match in shortNames.allMatches(clueText)) {
+  for (final match in _shortNamesRe.allMatches(clueText)) {
     final key = '${match.group(1)}:${match.group(2)!.toLowerCase()}';
     if (validKeys.contains(key)) references.add(key);
   }

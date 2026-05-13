@@ -166,7 +166,7 @@ class CrosswordGridPainter extends CustomPainter {
           );
         }
 
-        _paintAccessibilityOverlay(canvas, prog, cell.solution, rect, cellSize);
+        _paintAccessibilityOverlay(canvas, prog, rect, cellSize, r, c);
         _paintStateGlyph(canvas, prog, rect, cellSize);
 
         if (isShaking || effect?.isFlip == true) {
@@ -311,17 +311,17 @@ class CrosswordGridPainter extends CustomPainter {
   void _paintAccessibilityOverlay(
     Canvas canvas,
     CellProgress progress,
-    String solution,
     Rect rect,
     double cellSize,
+    int row,
+    int col,
   ) {
     switch (colorblindMode) {
       case ColorblindMode.none:
         return;
       case ColorblindMode.deuteranopia:
         final isCorrect = progress.state == CellState.checkedCorrect ||
-            (progress.letter.isNotEmpty &&
-                progress.letter.toUpperCase() == solution.toUpperCase());
+            _isCompletedCell(solveState, row, col);
         if (!isCorrect) return;
         final dotPaint = Paint()
           ..style = PaintingStyle.fill

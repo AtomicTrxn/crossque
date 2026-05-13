@@ -17,9 +17,7 @@ ArchiveRepository archiveRepository(Ref ref) {
 }
 
 /// All archive entries (puzzles + their latest session status), import-date desc.
-/// Invalidated by the archive screen after a delete, and by ImportNotifier after
-/// a successful import.
 @riverpod
-Future<List<ArchiveEntry>> archiveEntries(Ref ref) {
-  return ref.watch(archiveRepositoryProvider).getArchiveEntries();
+Stream<List<ArchiveEntry>> archiveEntries(Ref ref) {
+  return ref.watch(archiveRepositoryProvider).watchArchiveEntries();
 }

@@ -43,7 +43,7 @@ class AppDatabase extends _$AppDatabase {
   StatsDao get statsDao => StatsDao(this);
 
   @override
-  int get schemaVersion => 2;
+  int get schemaVersion => 3;
 
   /// Migration strategy.
   ///
@@ -56,11 +56,12 @@ class AppDatabase extends _$AppDatabase {
   ///
   /// ## Version history
   /// v1 → v2: added `imported_solve_stats` table.
+  /// v2 → v3: seeded `crosshare_daily_mini` source row (foreign-key fix).
   @override
   MigrationStrategy get migration => MigrationStrategy(
         onCreate: (m) async {
           await m.createAll();
-          await _seedLocalImportSource();
+          await _seedBuiltInSources();
         },
         onUpgrade: (m, from, to) async {
           // Safety: schema downgrades are not supported and indicate a bug.
@@ -74,6 +75,13 @@ class AppDatabase extends _$AppDatabase {
           if (from < 2) {
             // v1 → v2: add the imported_solve_stats table.
             await m.createTable(importedSolveStatsTable);
+          }
+
+          if (from < 3) {
+            // v2 → v3: seed the crosshare_daily_mini source so that puzzles
+            // downloaded via the Crosshare downloader satisfy the foreign-key
+            // constraint on puzzles.source_id.
+            await _seedCrosshareSource();
           }
         },
         beforeOpen: (details) async {
@@ -102,7 +110,29 @@ class AppDatabase extends _$AppDatabase {
     });
   }
 
-  /// Insert the built-in 'local_import' pseudo-source on first launch.
+  /// Seeds all built-in sources on a fresh install.
+  Future<void> _seedBuiltInSources() async {
+    await _seedLocalImportSource();
+    // Full ORM insert for fresh installs — schema is guaranteed complete.
+    final now = DateTime.now().toUtc();
+    await into(sourcesTable).insertOnConflictUpdate(
+      SourcesTableCompanion.insert(
+        id: 'crosshare_daily_mini',
+        displayName: 'Crosshare Daily Mini',
+        type: 'remote',
+        homepageUrl: const Value('https://crosshare.org'),
+        licenseStatus: const Value(LicenseStatus.explicitPermission),
+        enabled: const Value(true),
+        attributionRequired: const Value(true),
+        rawPayloadRetention: const Value(false),
+        commercialUseAllowed: const Value(false),
+        createdAt: now,
+        updatedAt: now,
+      ),
+    );
+  }
+
+  /// Insert the built-in 'local_import' pseudo-source.
   Future<void> _seedLocalImportSource() async {
     final now = DateTime.now().toUtc();
     await into(sourcesTable).insertOnConflictUpdate(
@@ -118,6 +148,31 @@ class AppDatabase extends _$AppDatabase {
         createdAt: now,
         updatedAt: now,
       ),
+    );
+  }
+
+  /// Seeds the 'crosshare_daily_mini' source row during schema migration.
+  ///
+  /// This intentionally duplicates the fresh-install seed row in
+  /// [_seedBuiltInSources], but uses raw SQL with only the columns present in
+  /// the minimal historical schemas. That keeps v1/v2 databases migratable even
+  /// when newer ORM columns did not exist yet. The migration tests in
+  /// `test/core/database/app_database_test.dart` cover this path.
+  Future<void> _seedCrosshareSource() async {
+    final now = DateTime.now().toUtc();
+    final nowMs = now.millisecondsSinceEpoch;
+    await customInsert(
+      'INSERT OR IGNORE INTO sources '
+      '(id, display_name, type, enabled, created_at, updated_at) '
+      'VALUES (?, ?, ?, ?, ?, ?)',
+      variables: [
+        const Variable<String>('crosshare_daily_mini'),
+        const Variable<String>('Crosshare Daily Mini'),
+        const Variable<String>('remote'),
+        const Variable<bool>(true),
+        Variable<int>(nowMs),
+        Variable<int>(nowMs),
+      ],
     );
   }
 }

@@ -60,6 +60,9 @@ class ImportRepositoryImpl implements ImportRepository {
   Future<List<PuzzleMetadata>> getAllMetadata() => _dao.getAllMetadata();
 
   @override
+  Stream<List<PuzzleMetadata>> watchAllMetadata() => _dao.watchAllMetadata();
+
+  @override
   Future<Puzzle?> getPuzzle(String id) => _dao.getPuzzle(id);
 
   @override

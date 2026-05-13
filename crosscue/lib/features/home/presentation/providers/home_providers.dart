@@ -5,8 +5,7 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 part 'home_providers.g.dart';
 
 @riverpod
-Future<List<PuzzleMetadata>> puzzleList(Ref ref) async {
-  // Invalidated after a successful import so Home refreshes immediately.
+Stream<List<PuzzleMetadata>> puzzleList(Ref ref) {
   final repo = ref.watch(importRepositoryProvider);
-  return repo.getAllMetadata();
+  return repo.watchAllMetadata();
 }
