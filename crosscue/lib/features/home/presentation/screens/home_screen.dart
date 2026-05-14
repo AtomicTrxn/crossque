@@ -8,6 +8,7 @@ import 'package:crosscue/features/archive/domain/models/archive_entry.dart';
 import 'package:crosscue/features/archive/presentation/providers/archive_providers.dart';
 import 'package:crosscue/features/archive/presentation/widgets/puzzle_list_tile.dart';
 import 'package:crosscue/features/home/presentation/providers/home_providers.dart';
+import 'package:crosscue/features/home/presentation/widgets/past_puzzles_section.dart';
 import 'package:crosscue/features/import/domain/repositories/puzzle_source.dart';
 import 'package:crosscue/features/import/presentation/providers/source_registry_provider.dart';
 import 'package:crosscue/features/stats/presentation/providers/stats_providers.dart';
@@ -87,7 +88,13 @@ class HomeScreen extends ConsumerWidget {
         error: (e, _) => Center(child: Text('Error: $e')),
         data: (puzzles) {
           if (puzzles.isEmpty) {
-            return const _EmptyState();
+            return ListView(
+              children: const [
+                _EmptyState(),
+                PastPuzzlesSection(),
+                SizedBox(height: 88),
+              ],
+            );
           }
 
           // Use archive entries for richer status info; fall back to metadata
@@ -129,6 +136,8 @@ class HomeScreen extends ConsumerWidget {
                   );
                 }),
               ],
+
+              const PastPuzzlesSection(),
 
               // Bottom padding so FAB doesn't overlap last row
               const SizedBox(height: 88),
@@ -325,9 +334,12 @@ class _EmptyState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Center(
+    return Padding(
+      padding: const EdgeInsets.symmetric(
+        horizontal: CrosscueSpacing.screenH,
+        vertical: 48,
+      ),
       child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Icon(
             Icons.grid_on_outlined,
