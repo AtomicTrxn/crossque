@@ -353,7 +353,7 @@ class _EmptyState extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           Text(
-            'Tap + to import or download a puzzle.',
+            'Pick a past puzzle below, or tap + to import your own.',
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                   color: context.crosscueOnSurface3,
                 ),
