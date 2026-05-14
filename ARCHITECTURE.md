@@ -46,15 +46,25 @@ lib/
 
 ## Feature: `home`
 
-Lists imported puzzles and launches the import flow.
+Lists imported puzzles and launches the import flow. Below that, a
+"Past puzzles" section lets the user browse and download missed daily
+minis from the Crosshare archive — visible on both empty and populated
+states so new users see depth immediately.
 
 ```
 home/
+├── domain/models/
+│   └── past_puzzle_item.dart            # CrosshareEntry + localPuzzleId
 └── presentation/
+    ├── notifiers/
+    │   ├── past_puzzles_notifier.dart    # AsyncNotifier<PastPuzzlesState>
+    │   └── past_puzzles_state.dart       # items, cursor, hasMore, per-row download flags
     ├── providers/
-    │   └── home_providers.dart # puzzleListProvider (@riverpod Future<List<PuzzleMetadata>>)
-    └── screens/
-        └── home_screen.dart   # HomeScreen (featured puzzle card, recent list, pie progress, _EmptyState)
+    │   └── home_providers.dart           # puzzleListProvider
+    ├── screens/
+    │   └── home_screen.dart              # featured card, recent list, _EmptyState
+    └── widgets/
+        └── past_puzzles_section.dart     # PastPuzzlesSection + rows + footer
 ```
 
 **Data flow:**
@@ -63,7 +73,23 @@ HomeScreen (ref.watch puzzleListProvider)
   → ImportRepository.getAllMetadata()   # sorted by createdAt DESC
   → _PuzzleTile.onTap
       → context.push('/solve/${Uri.encodeComponent(puzzle.id)}')
+
+PastPuzzlesSection (ref.watch pastPuzzlesProvider)
+  → PastPuzzlesNotifier.build()
+      → CrosshareDownloader.fetchMonth(year, month)   # walks backward, monthly
+      → join with ImportRepository.getAllMetadata()    # sourcePuzzleId lookup
+  → row tap
+      → if imported: context.push('/solve/...')
+      → else: PastPuzzlesNotifier.download(entry)
+          → CrosshareDownloader.downloadById(id)
+          → ImportRepository.importBytes(..., sourcePuzzleId: entry.id)
+          → context.push('/solve/...')
 ```
+
+**Streak interaction:** Back-filled solves use `solvedDateLocal` (the date
+the user solves) for streak attribution, not the puzzle's publish date.
+Solving seven missed days all on Saturday counts as one day of streak,
+not seven — no artificial streak inflation from back-filling.
 
 ---
 
