@@ -46,3 +46,44 @@ final class PuzzleListProvider extends $FunctionalProvider<
 }
 
 String _$puzzleListHash() => r'd1f50eec428c3100d22d9f237e762e13e591cccf';
+
+@ProviderFor(currentLocalDate)
+final currentLocalDateProvider = CurrentLocalDateProvider._();
+
+final class CurrentLocalDateProvider
+    extends $FunctionalProvider<DateTime, DateTime, DateTime>
+    with $Provider<DateTime> {
+  CurrentLocalDateProvider._()
+      : super(
+          from: null,
+          argument: null,
+          retry: null,
+          name: r'currentLocalDateProvider',
+          isAutoDispose: true,
+          dependencies: null,
+          $allTransitiveDependencies: null,
+        );
+
+  @override
+  String debugGetCreateSourceHash() => _$currentLocalDateHash();
+
+  @$internal
+  @override
+  $ProviderElement<DateTime> $createElement($ProviderPointer pointer) =>
+      $ProviderElement(pointer);
+
+  @override
+  DateTime create(Ref ref) {
+    return currentLocalDate(ref);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(DateTime value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<DateTime>(value),
+    );
+  }
+}
+
+String _$currentLocalDateHash() => r'db69a8ad2b81152de711b9549c01e8a2bb0ff915';

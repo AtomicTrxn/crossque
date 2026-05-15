@@ -8,6 +8,7 @@ import 'package:crosscue/core/domain/models/puzzle_metadata.dart';
 import 'package:crosscue/core/domain/models/solution_cell.dart';
 import 'package:crosscue/core/utils/result.dart';
 import 'package:crosscue/features/home/presentation/notifiers/past_puzzles_notifier.dart';
+import 'package:crosscue/features/home/presentation/providers/home_providers.dart';
 import 'package:crosscue/features/import/data/downloaders/crosshare_downloader.dart';
 import 'package:crosscue/features/import/domain/models/crosshare_entry.dart';
 import 'package:crosscue/features/import/domain/models/import_job_result.dart';
@@ -151,6 +152,7 @@ ProviderContainer _container({
 }) {
   return ProviderContainer(
     overrides: [
+      currentLocalDateProvider.overrideWith((ref) => _today),
       crosshareDownloaderProvider.overrideWith((ref) => downloader),
       importRepositoryProvider.overrideWith((ref) => repo),
     ],

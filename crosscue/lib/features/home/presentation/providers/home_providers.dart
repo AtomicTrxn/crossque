@@ -9,3 +9,9 @@ Stream<List<PuzzleMetadata>> puzzleList(Ref ref) {
   final repo = ref.watch(importRepositoryProvider);
   return repo.watchAllMetadata();
 }
+
+@riverpod
+DateTime currentLocalDate(Ref ref) {
+  final now = DateTime.now();
+  return DateTime(now.year, now.month, now.day);
+}
