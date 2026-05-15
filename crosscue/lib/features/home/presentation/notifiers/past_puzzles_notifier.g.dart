@@ -49,7 +49,7 @@ final class PastPuzzlesNotifierProvider
 }
 
 String _$pastPuzzlesNotifierHash() =>
-    r'81c7b9a36201bb25dd2c08f4f67490fbba81b316';
+    r'12ab2732778d2a5829f46f50f7bbc97b595eaa9d';
 
 /// Loads and manages the "Past puzzles" listing on the Today screen.
 ///

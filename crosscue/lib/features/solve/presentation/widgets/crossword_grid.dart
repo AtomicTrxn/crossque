@@ -187,8 +187,7 @@ class _CrosswordGridState extends ConsumerState<CrosswordGrid>
                         effects: animationsDisabled ? const {} : _effects,
                         effectValue: animationsDisabled
                             ? 1.0
-                            : Curves.easeOut
-                                .transform(_effectController.value),
+                            : Curves.easeOut.transform(_effectController.value),
                       ),
                     ),
                   ),
