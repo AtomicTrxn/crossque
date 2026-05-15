@@ -216,31 +216,34 @@ class _CheckRevealMenu extends ConsumerWidget {
       case _CheckRevealOption.resetPuzzle:
         final confirmed = await showDialog<bool>(
           context: context,
-          builder: (ctx) => AlertDialog(
-            title: const Text('Reset puzzle?'),
-            content: const Text(
-              'All your progress, checks, and reveals will be cleared. '
-              'The timer will restart from zero.',
-            ),
-            actions: [
-              FilledButton(
-                style: FilledButton.styleFrom(
-                  backgroundColor: CrosscueColors.primary,
-                  foregroundColor: Colors.white,
-                ),
-                onPressed: () => Navigator.pop(ctx, false),
-                child: const Text('Cancel'),
+          builder: (ctx) {
+            final primary = Theme.of(ctx).colorScheme.primary;
+            return AlertDialog(
+              title: const Text('Reset puzzle?'),
+              content: const Text(
+                'All your progress, checks, and reveals will be cleared. '
+                'The timer will restart from zero.',
               ),
-              FilledButton(
-                style: FilledButton.styleFrom(
-                  backgroundColor: ctx.crosscueError,
-                  foregroundColor: Colors.white,
+              actions: [
+                FilledButton(
+                  style: FilledButton.styleFrom(
+                    backgroundColor: primary,
+                    foregroundColor: Colors.white,
+                  ),
+                  onPressed: () => Navigator.pop(ctx, false),
+                  child: const Text('Cancel'),
                 ),
-                onPressed: () => Navigator.pop(ctx, true),
-                child: const Text('Reset'),
-              ),
-            ],
-          ),
+                FilledButton(
+                  style: FilledButton.styleFrom(
+                    backgroundColor: ctx.crosscueError,
+                    foregroundColor: Colors.white,
+                  ),
+                  onPressed: () => Navigator.pop(ctx, true),
+                  child: const Text('Reset'),
+                ),
+              ],
+            );
+          },
         );
         if (confirmed == true) notifier.resetPuzzle();
       case _CheckRevealOption.divider:
@@ -268,32 +271,35 @@ Future<void> _confirmResetFromAppBar(
 ) async {
   final confirmed = await showDialog<bool>(
     context: context,
-    builder: (ctx) => AlertDialog(
-      title: const Text('Reset puzzle?'),
-      content: const Text(
-        'Your progress will be cleared and the timer will restart from '
-        'zero. Your original completion is preserved in your stats and '
-        'streak.',
-      ),
-      actions: [
-        FilledButton(
-          style: FilledButton.styleFrom(
-            backgroundColor: CrosscueColors.primary,
-            foregroundColor: Colors.white,
-          ),
-          onPressed: () => Navigator.pop(ctx, false),
-          child: const Text('Cancel'),
+    builder: (ctx) {
+      final primary = Theme.of(ctx).colorScheme.primary;
+      return AlertDialog(
+        title: const Text('Reset puzzle?'),
+        content: const Text(
+          'Your progress will be cleared and the timer will restart from '
+          'zero. Your original completion is preserved in your stats and '
+          'streak.',
         ),
-        FilledButton(
-          style: FilledButton.styleFrom(
-            backgroundColor: ctx.crosscueError,
-            foregroundColor: Colors.white,
+        actions: [
+          FilledButton(
+            style: FilledButton.styleFrom(
+              backgroundColor: primary,
+              foregroundColor: Colors.white,
+            ),
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancel'),
           ),
-          onPressed: () => Navigator.pop(ctx, true),
-          child: const Text('Reset'),
-        ),
-      ],
-    ),
+          FilledButton(
+            style: FilledButton.styleFrom(
+              backgroundColor: ctx.crosscueError,
+              foregroundColor: Colors.white,
+            ),
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Reset'),
+          ),
+        ],
+      );
+    },
   );
   if (confirmed == true) {
     ref.read(solveProvider(puzzleId).notifier).resetPuzzle();
