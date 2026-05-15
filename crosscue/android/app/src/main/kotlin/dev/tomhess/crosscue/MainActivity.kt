@@ -1,4 +1,4 @@
-package com.crosscue.crosscue
+package dev.tomhess.crosscue
 
 import io.flutter.embedding.android.FlutterActivity
 
