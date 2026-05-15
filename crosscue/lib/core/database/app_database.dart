@@ -95,6 +95,39 @@ class AppDatabase extends _$AppDatabase {
           if (from < 4) {
             // v3 → v4: add puzzle_completions table (immutable history).
             await m.createTable(puzzleCompletionsTable);
+            final solveSessionsTableExists = await customSelect(
+              '''
+                SELECT COUNT(*) AS cnt
+                FROM sqlite_master
+                WHERE type = 'table' AND name = 'solve_sessions'
+              ''',
+            ).getSingle();
+            if (solveSessionsTableExists.read<int>('cnt') > 0) {
+              await customStatement('''
+              INSERT INTO puzzle_completions (
+                puzzle_id,
+                completion_type,
+                completed_at,
+                solved_date_local,
+                solved_timezone,
+                elapsed_ms,
+                check_count,
+                reveal_count
+              )
+              SELECT
+                puzzle_id,
+                completion_type,
+                COALESCE(completed_at, updated_at, last_played_at, created_at),
+                solved_date_local,
+                solved_timezone,
+                elapsed_ms,
+                check_count,
+                reveal_count
+              FROM solve_sessions
+              WHERE completion_type IS NOT NULL
+                AND solved_date_local IS NOT NULL
+            ''');
+            }
           }
         },
         beforeOpen: (details) async {

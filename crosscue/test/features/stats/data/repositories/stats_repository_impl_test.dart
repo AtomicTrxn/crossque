@@ -5,6 +5,7 @@
 
 import 'package:crosscue/core/database/app_database.dart';
 import 'package:crosscue/features/stats/data/repositories/stats_repository_impl.dart';
+import 'package:drift/drift.dart' hide isNull;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -41,6 +42,49 @@ void main() {
           puzzleTitle: puzzleTitle ?? 'Puzzle $date',
         ),
       );
+
+  Future<void> seedResetLocalSolve() async {
+    final now = DateTime.utc(2025, 1, 2);
+    await db.into(db.puzzlesTable).insert(
+          PuzzlesTableCompanion.insert(
+            id: 'puzzle-1',
+            sourceId: 'local_import',
+            format: 'ipuz',
+            title: 'Reset Puzzle',
+            width: 5,
+            height: 5,
+            checksum: 'checksum',
+            canonicalJson: '{}',
+            createdAt: now,
+            updatedAt: now,
+          ),
+        );
+    await db.into(db.solveSessionsTable).insert(
+          SolveSessionsTableCompanion.insert(
+            puzzleId: 'puzzle-1',
+            deviceId: 'device-1',
+            status: const Value('in_progress'),
+            completionType: const Value.absent(),
+            startedAt: now,
+            lastPlayedAt: now,
+            completedAt: const Value.absent(),
+            solvedDateLocal: const Value.absent(),
+            elapsedMs: const Value(0),
+            createdAt: now,
+            updatedAt: now,
+          ),
+        );
+    await db.into(db.puzzleCompletionsTable).insert(
+          PuzzleCompletionsTableCompanion.insert(
+            puzzleId: 'puzzle-1',
+            completionType: 'clean',
+            completedAt: now,
+            solvedDateLocal: '2025-01-02',
+            solvedTimezone: const Value('America/New_York'),
+            elapsedMs: 42000,
+          ),
+        );
+  }
 
   // ---------------------------------------------------------------------------
   // Empty state
@@ -85,6 +129,20 @@ void main() {
 
       final stats = await repo.getStats();
       expect(stats.startedCount, equals(2));
+    });
+  });
+
+  group('reset local solves', () {
+    test('keep contributing completed stats after the live session is reset',
+        () async {
+      await seedResetLocalSolve();
+
+      final stats = await repo.getStats();
+      expect(stats.totalSolved, equals(1));
+      expect(stats.cleanSolves, equals(1));
+      expect(stats.averageElapsedMs, equals(42000));
+      expect(stats.personalBestMiniMs, equals(42000));
+      expect(stats.startedCount, equals(1));
     });
   });
 
