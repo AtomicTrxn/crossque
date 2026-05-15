@@ -13,7 +13,7 @@ flutter run -d <device-id>
 # Build + install debug APK
 flutter build apk --debug --no-pub
 adb -s <device-id> install -r build/app/outputs/flutter-apk/app-debug.apk
-adb -s <device-id> shell am start -n com.crosscue.crosscue/.MainActivity
+adb -s <device-id> shell am start -n dev.tomhess.crosscue/.MainActivity
 
 # Regenerate after model/notifier/table changes
 dart run build_runner build

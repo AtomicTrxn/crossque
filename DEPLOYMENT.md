@@ -55,7 +55,7 @@ flutter build apk --debug --no-pub
 adb -s <device-id> install -r build/app/outputs/flutter-apk/app-debug.apk
 
 # 3. Launch the app
-adb -s <device-id> shell am start -n com.crosscue.crosscue/.MainActivity
+adb -s <device-id> shell am start -n dev.tomhess.crosscue/.MainActivity
 ```
 
 > **Why not `flutter install`?** The `flutter install` command targets the release APK by default and doesn't accept `--no-pub`. Using `adb install -r` directly is more reliable for debug builds.
@@ -295,7 +295,7 @@ Complete these steps before submitting to Google Play for the first time.
 Human review is required before publishing — this is not legal advice.
 
 ### Privacy policy (required before submission)
-- [ ] Publish a privacy policy at a stable public URL (e.g. `raptortech.com/crosscue/privacy` or GitHub Pages)
+- [ ] Publish a privacy policy at a stable public URL (e.g. GitHub Pages)
 - [ ] Confirm crash reporter vendor (Sentry vs. Firebase Crashlytics) and insert correct name + privacy policy link
 - [ ] Add the privacy policy URL to Play Console → Store Presence → App Content → Privacy Policy
 - [ ] Add an "About / Privacy Policy" link in app Settings

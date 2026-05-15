@@ -277,12 +277,7 @@ class PastPuzzlesNotifier extends _$PastPuzzlesNotifier {
     };
   }
 
-  /// Today's date, stripped to midnight local time. Overrideable in tests via
-  /// the `clock` package would be cleaner, but we don't use it elsewhere yet.
-  DateTime _today() {
-    final now = DateTime.now();
-    return DateTime(now.year, now.month, now.day);
-  }
+  DateTime _today() => ref.read(currentLocalDateProvider);
 
   bool _isSameDay(DateTime a, DateTime b) =>
       a.year == b.year && a.month == b.month && a.day == b.day;
