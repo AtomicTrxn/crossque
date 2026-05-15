@@ -48,25 +48,23 @@ class StatsDao extends DatabaseAccessor<AppDatabase> with _$StatsDaoMixin {
   // Completed sessions
   // ---------------------------------------------------------------------------
 
-  /// All sessions that have a [completionType] set, joined with the puzzle's
-  /// grid dimensions.  Used for PB computation and average-time calculation.
+  /// All immutable local completions, joined with the puzzle's grid dimensions.
+  /// Used for PB computation and average-time calculation.
   Future<List<CompletedSessionStat>> getCompletedSessionsWithPuzzle() async {
-    final rows = await (select(solveSessionsTable)
-          ..where((t) => t.completionType.isNotNull()))
-        .join([
+    final rows = await select(puzzleCompletionsTable).join([
       innerJoin(
         puzzlesTable,
-        puzzlesTable.id.equalsExp(solveSessionsTable.puzzleId),
+        puzzlesTable.id.equalsExp(puzzleCompletionsTable.puzzleId),
       ),
     ]).get();
 
     final localRows = rows.map((row) {
-      final session = row.readTable(solveSessionsTable);
+      final completion = row.readTable(puzzleCompletionsTable);
       final puzzle = row.readTable(puzzlesTable);
       return (
-        completionType: session.completionType,
-        elapsedMs: session.elapsedMs,
-        solvedDateLocal: session.solvedDateLocal,
+        completionType: completion.completionType,
+        elapsedMs: completion.elapsedMs,
+        solvedDateLocal: completion.solvedDateLocal,
         width: puzzle.width,
         height: puzzle.height,
         difficulty: puzzle.difficulty,
@@ -90,28 +88,26 @@ class StatsDao extends DatabaseAccessor<AppDatabase> with _$StatsDaoMixin {
   }
 
   Future<List<StatsExportRecord>> getExportRecords() async {
-    final rows = await (select(solveSessionsTable)
-          ..where((t) => t.completionType.isNotNull()))
-        .join([
+    final rows = await select(puzzleCompletionsTable).join([
       innerJoin(
         puzzlesTable,
-        puzzlesTable.id.equalsExp(solveSessionsTable.puzzleId),
+        puzzlesTable.id.equalsExp(puzzleCompletionsTable.puzzleId),
       ),
     ]).get();
 
     final localRecords = rows.map((row) {
-      final session = row.readTable(solveSessionsTable);
+      final completion = row.readTable(puzzleCompletionsTable);
       final puzzle = row.readTable(puzzlesTable);
       return (
-        completionType: session.completionType ?? 'clean',
-        elapsedMs: session.elapsedMs,
-        solvedDateLocal: session.solvedDateLocal ?? '',
-        solvedTimezone: session.solvedTimezone,
+        completionType: completion.completionType,
+        elapsedMs: completion.elapsedMs,
+        solvedDateLocal: completion.solvedDateLocal,
+        solvedTimezone: completion.solvedTimezone,
         width: puzzle.width,
         height: puzzle.height,
         puzzleTitle: puzzle.title,
       );
-    }).where((row) => row.solvedDateLocal.isNotEmpty);
+    });
 
     final importedRows = await select(importedSolveStatsTable).get();
     return [
@@ -182,18 +178,17 @@ class StatsDao extends DatabaseAccessor<AppDatabase> with _$StatsDaoMixin {
     required String puzzleTitle,
     required String solvedDateLocal,
   }) async {
-    final localCount = solveSessionsTable.id.count();
-    final local = await (selectOnly(solveSessionsTable)
+    final localCount = puzzleCompletionsTable.id.count();
+    final local = await (selectOnly(puzzleCompletionsTable)
           ..addColumns([localCount])
           ..join([
             innerJoin(
               puzzlesTable,
-              puzzlesTable.id.equalsExp(solveSessionsTable.puzzleId),
+              puzzlesTable.id.equalsExp(puzzleCompletionsTable.puzzleId),
             ),
           ])
           ..where(
-            solveSessionsTable.completionType.isNotNull() &
-                solveSessionsTable.solvedDateLocal.equals(solvedDateLocal) &
+            puzzleCompletionsTable.solvedDateLocal.equals(solvedDateLocal) &
                 puzzlesTable.title.equals(puzzleTitle),
           ))
         .getSingle();

@@ -286,11 +286,12 @@ void main() {
       if (tempDir.existsSync()) await tempDir.delete(recursive: true);
     });
 
-    test('creates puzzle_completions table', () async {
+    test('creates puzzle_completions table and backfills completed sessions',
+        () async {
       final file = File('${tempDir.path}/v3.db');
       final rawDb = raw_sqlite.sqlite3.open(file.path);
       try {
-        // Build a minimal v3 schema (sources + crosshare seed + imported stats).
+        // Build a minimal v3 schema with one completed session to migrate.
         rawDb.execute('''
           CREATE TABLE sources (
             id TEXT NOT NULL PRIMARY KEY,
@@ -313,6 +314,85 @@ void main() {
             imported_at INTEGER NOT NULL
           )
         ''');
+        rawDb.execute('''
+          INSERT INTO sources (id, display_name, type, enabled, created_at, updated_at)
+          VALUES ('local_import', 'Local Import', 'local', 1, 1, 1)
+        ''');
+        rawDb.execute('''
+          CREATE TABLE puzzles (
+            id TEXT NOT NULL PRIMARY KEY,
+            source_id TEXT NOT NULL,
+            source_puzzle_id TEXT,
+            format TEXT NOT NULL,
+            title TEXT NOT NULL,
+            author TEXT,
+            editor TEXT,
+            publisher TEXT,
+            copyright TEXT,
+            notes TEXT,
+            publish_date INTEGER,
+            difficulty TEXT,
+            width INTEGER NOT NULL,
+            height INTEGER NOT NULL,
+            checksum TEXT NOT NULL,
+            canonical_json TEXT NOT NULL,
+            raw_payload TEXT,
+            fetched_at INTEGER,
+            expires_at INTEGER,
+            created_at INTEGER NOT NULL,
+            updated_at INTEGER NOT NULL
+          )
+        ''');
+        rawDb.execute('''
+          INSERT INTO puzzles (
+            id, source_id, format, title, width, height, checksum,
+            canonical_json, created_at, updated_at
+          )
+          VALUES ('puzzle-1', 'local_import', 'ipuz', 'Migrated Puzzle',
+                  5, 5, 'checksum', '{}', 1, 1)
+        ''');
+        rawDb.execute('''
+          CREATE TABLE solve_sessions (
+            id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+            puzzle_id TEXT NOT NULL,
+            device_id TEXT NOT NULL,
+            status TEXT NOT NULL DEFAULT 'not_started',
+            completion_type TEXT,
+            started_at INTEGER NOT NULL,
+            last_played_at INTEGER NOT NULL,
+            completed_at INTEGER,
+            solved_date_local TEXT,
+            solved_timezone TEXT,
+            elapsed_ms INTEGER NOT NULL DEFAULT 0,
+            is_paused INTEGER NOT NULL DEFAULT 0,
+            paused_at INTEGER,
+            total_paused_ms INTEGER NOT NULL DEFAULT 0,
+            mistake_count INTEGER NOT NULL DEFAULT 0,
+            check_count INTEGER NOT NULL DEFAULT 0,
+            reveal_count INTEGER NOT NULL DEFAULT 0,
+            used_check INTEGER NOT NULL DEFAULT 0,
+            used_reveal INTEGER NOT NULL DEFAULT 0,
+            clean_solve_eligible INTEGER NOT NULL DEFAULT 1,
+            focus_row INTEGER NOT NULL DEFAULT 0,
+            focus_col INTEGER NOT NULL DEFAULT 0,
+            direction TEXT NOT NULL DEFAULT 'across',
+            is_synced INTEGER NOT NULL DEFAULT 0,
+            sync_version INTEGER NOT NULL DEFAULT 0,
+            created_at INTEGER NOT NULL,
+            updated_at INTEGER NOT NULL
+          )
+        ''');
+        rawDb.execute('''
+          INSERT INTO solve_sessions (
+            puzzle_id, device_id, status, completion_type, started_at,
+            last_played_at, completed_at, solved_date_local, solved_timezone,
+            elapsed_ms, check_count, reveal_count, created_at, updated_at
+          )
+          VALUES (
+            'puzzle-1', 'device-1', 'completed', 'checked', 10, 20, 30,
+            '2025-01-02', 'America/New_York', 45000, 2, 1, 10, 30
+          )
+        ''');
         rawDb.execute('PRAGMA user_version = 3');
       } finally {
         rawDb.dispose();
@@ -321,8 +401,15 @@ void main() {
       final db = AppDatabase(NativeDatabase(file));
       addTearDown(() => db.close());
 
-      // Table exists and is queryable after onUpgrade(m, 3, 4).
-      expect(await db.select(db.puzzleCompletionsTable).get(), isEmpty);
+      final rows = await db.select(db.puzzleCompletionsTable).get();
+      expect(rows, hasLength(1));
+      expect(rows.single.puzzleId, equals('puzzle-1'));
+      expect(rows.single.completionType, equals('checked'));
+      expect(rows.single.solvedDateLocal, equals('2025-01-02'));
+      expect(rows.single.solvedTimezone, equals('America/New_York'));
+      expect(rows.single.elapsedMs, equals(45000));
+      expect(rows.single.checkCount, equals(2));
+      expect(rows.single.revealCount, equals(1));
     });
   });
 

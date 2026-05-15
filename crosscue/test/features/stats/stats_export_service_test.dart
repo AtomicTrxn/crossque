@@ -12,6 +12,7 @@ import 'dart:typed_data';
 import 'package:crosscue/core/database/app_database.dart';
 import 'package:crosscue/features/stats/data/services/stats_export_service_impl.dart';
 import 'package:crosscue/features/stats/domain/services/stats_export_service.dart';
+import 'package:drift/drift.dart' show Value;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -68,6 +69,57 @@ void main() {
       expect(first['width'], equals(5));
       expect(first['height'], equals(5));
       expect(first['puzzleTitle'], equals('Test Puzzle'));
+    });
+
+    test('includes a local completion after its live session is reset',
+        () async {
+      final now = DateTime.utc(2025, 1, 2);
+      await db.into(db.puzzlesTable).insert(
+            PuzzlesTableCompanion.insert(
+              id: 'puzzle-1',
+              sourceId: 'local_import',
+              format: 'ipuz',
+              title: 'Reset Puzzle',
+              width: 5,
+              height: 5,
+              checksum: 'checksum',
+              canonicalJson: '{}',
+              createdAt: now,
+              updatedAt: now,
+            ),
+          );
+      await db.into(db.solveSessionsTable).insert(
+            SolveSessionsTableCompanion.insert(
+              puzzleId: 'puzzle-1',
+              deviceId: 'device-1',
+              status: const Value('in_progress'),
+              startedAt: now,
+              lastPlayedAt: now,
+              elapsedMs: const Value(0),
+              createdAt: now,
+              updatedAt: now,
+            ),
+          );
+      await db.into(db.puzzleCompletionsTable).insert(
+            PuzzleCompletionsTableCompanion.insert(
+              puzzleId: 'puzzle-1',
+              completionType: 'clean',
+              completedAt: now,
+              solvedDateLocal: '2025-01-02',
+              solvedTimezone: const Value('America/New_York'),
+              elapsedMs: 42000,
+            ),
+          );
+
+      final result = await service.generateExportBytes();
+      expect(result.isOk, isTrue);
+
+      final decoded = jsonDecode(utf8.decode(result.value)) as List;
+      expect(decoded, hasLength(1));
+      final first = decoded.single as Map<String, dynamic>;
+      expect(first['puzzleTitle'], equals('Reset Puzzle'));
+      expect(first['solvedDateLocal'], equals('2025-01-02'));
+      expect(first['elapsedMs'], equals(42000));
     });
 
     test('output is valid pretty-printed UTF-8 JSON', () async {
