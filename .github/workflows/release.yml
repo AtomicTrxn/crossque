@@ -114,14 +114,12 @@ jobs:
           files: crosscue/build/app/outputs/flutter-apk/app-release.apk
 
       # ── Play Store upload (only when play_store: true) ────────────────────
-      # Requires secret: PLAY_SERVICE_ACCOUNT_JSON
-      #
-      # - name: Upload to Play Store — internal track
-      #   if: ${{ inputs.play_store == true }}
-      #   uses: r0adkll/upload-google-play@v1
-      #   with:
-      #     serviceAccountJsonPlainText: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
-      #     packageName: dev.tomhess.crosscue
-      #     releaseFiles: crosscue/build/app/outputs/bundle/release/app-release.aab
-      #     track: internal
-      #     status: completed
+      - name: Upload to Play Store — internal track
+        if: ${{ inputs.play_store == true }}
+        uses: r0adkll/upload-google-play@v1
+        with:
+          serviceAccountJsonPlainText: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
+          packageName: dev.tomhess.crosscue
+          releaseFiles: crosscue/build/app/outputs/bundle/release/app-release.aab
+          track: internal
+          status: completed

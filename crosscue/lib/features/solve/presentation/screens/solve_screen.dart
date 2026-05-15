@@ -322,19 +322,20 @@ class _SolveScreenState extends ConsumerState<SolveScreen>
             solveState: solveState,
             isComplete: isComplete,
           ),
-          body: Stack(
+          body: LayoutBuilder(
+            builder: (context, constraints) => Stack(
             children: [
               Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  // Grid — sizes to fit both dimensions. Flexible(flex: 4)
-                  // gives it up to 80% of the remaining space after the
-                  // keyboard takes its intrinsic height; tall puzzles
-                  // clamp to that bound instead of overflowing the keyboard
-                  // off-screen.
-                  Flexible(
-                    flex: 4,
-                    fit: FlexFit.loose,
+                  // Grid — capped at 55% of body height so CluePanel and
+                  // keyboard always have room. CrosswordGrid's internal
+                  // LayoutBuilder sizes cells by min(width/cols, height/rows)
+                  // so it renders correctly within any tight height bound.
+                  ConstrainedBox(
+                    constraints: BoxConstraints(
+                      maxHeight: constraints.maxHeight * 0.55,
+                    ),
                     child: CrosswordGrid(
                       puzzleId: widget.puzzleId,
                       solveState: solveState,
@@ -343,9 +344,10 @@ class _SolveScreenState extends ConsumerState<SolveScreen>
                     ),
                   ),
 
-                  // Two-column clue panel — takes remaining vertical space
+                  // Clue panel — Expanded with no flex competitors so it
+                  // takes exactly the space between grid and keyboard,
+                  // leaving zero free space that could float the keyboard up.
                   Expanded(
-                    flex: 1,
                     child: CluePanel(
                       solveState: solveState,
                       activeClue: selectedActiveClue,
@@ -423,6 +425,7 @@ class _SolveScreenState extends ConsumerState<SolveScreen>
                 ),
             ],
           ),
+            ),
         );
       },
     );

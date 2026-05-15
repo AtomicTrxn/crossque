@@ -98,8 +98,14 @@ class StatsRepositoryImpl implements StatsRepository {
         : (sevenDayElapsed.reduce((a, b) => a + b) / sevenDayElapsed.length)
             .round();
 
-    final completionRate =
-        totalStarted == 0 ? 0.0 : (totalSolved + revealed) / totalStarted;
+    final totalCompleted = totalSolved + revealed;
+    // solveSessionsTable rows are wiped on puzzle reset, so totalStarted can
+    // be lower than totalCompleted. Use completions as the floor.
+    final effectiveStarted =
+        totalStarted < totalCompleted ? totalCompleted : totalStarted;
+    final completionRate = effectiveStarted == 0
+        ? 0.0
+        : totalCompleted / effectiveStarted;
 
     return StatsData(
       currentStreak: currentStreak,
@@ -109,7 +115,7 @@ class StatsRepositoryImpl implements StatsRepository {
       hintedCheckedSolves: checked + hinted,
       revealedCount: revealed,
       completionRate: completionRate,
-      startedCount: totalStarted,
+      startedCount: effectiveStarted,
       averageElapsedMs: avg,
       sevenDayAverageMs: sevenDayAvg,
       personalBest15x15Ms: pb15x15,
