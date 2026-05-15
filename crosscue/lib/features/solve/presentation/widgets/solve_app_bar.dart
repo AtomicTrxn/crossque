@@ -74,23 +74,38 @@ class SolveAppBar extends ConsumerWidget implements PreferredSizeWidget {
               overflow: TextOverflow.ellipsis,
             ),
       actions: [
-        GestureDetector(
-          onTap: () {
-            final notifier = ref.read(solveProvider(puzzleId).notifier);
-            if (solveState.isPaused) {
-              notifier.resume();
-            } else {
-              notifier.pause();
-            }
-          },
-          child: Center(
+        if (isComplete)
+          Center(
             child: _TimerDisplay(
               seconds: solveState.elapsedSeconds,
-              isPaused: solveState.isPaused,
+              isPaused: false,
+            ),
+          )
+        else
+          GestureDetector(
+            onTap: () {
+              final notifier = ref.read(solveProvider(puzzleId).notifier);
+              if (solveState.isPaused) {
+                notifier.resume();
+              } else {
+                notifier.pause();
+              }
+            },
+            child: Center(
+              child: _TimerDisplay(
+                seconds: solveState.elapsedSeconds,
+                isPaused: solveState.isPaused,
+              ),
             ),
           ),
-        ),
-        if (!isComplete) _CheckRevealMenu(puzzleId: puzzleId),
+        if (isComplete)
+          IconButton(
+            icon: const Icon(Icons.restart_alt),
+            tooltip: 'Reset puzzle',
+            onPressed: () => _confirmResetFromAppBar(context, ref, puzzleId),
+          )
+        else
+          _CheckRevealMenu(puzzleId: puzzleId),
         const SizedBox(width: 4),
       ],
     );
@@ -243,6 +258,45 @@ class _CheckRevealMenu extends ConsumerWidget {
     if (result.shouldVibrate && hapticsOn) {
       HapticFeedback.vibrate();
     }
+  }
+}
+
+Future<void> _confirmResetFromAppBar(
+  BuildContext context,
+  WidgetRef ref,
+  String puzzleId,
+) async {
+  final confirmed = await showDialog<bool>(
+    context: context,
+    builder: (ctx) => AlertDialog(
+      title: const Text('Reset puzzle?'),
+      content: const Text(
+        'Your progress will be cleared and the timer will restart from '
+        'zero. Your original completion is preserved in your stats and '
+        'streak.',
+      ),
+      actions: [
+        FilledButton(
+          style: FilledButton.styleFrom(
+            backgroundColor: CrosscueColors.primary,
+            foregroundColor: Colors.white,
+          ),
+          onPressed: () => Navigator.pop(ctx, false),
+          child: const Text('Cancel'),
+        ),
+        FilledButton(
+          style: FilledButton.styleFrom(
+            backgroundColor: ctx.crosscueError,
+            foregroundColor: Colors.white,
+          ),
+          onPressed: () => Navigator.pop(ctx, true),
+          child: const Text('Reset'),
+        ),
+      ],
+    ),
+  );
+  if (confirmed == true) {
+    ref.read(solveProvider(puzzleId).notifier).resetPuzzle();
   }
 }
 

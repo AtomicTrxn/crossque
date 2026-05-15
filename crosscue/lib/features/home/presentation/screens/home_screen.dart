@@ -169,7 +169,7 @@ class _ImportFAB extends ConsumerWidget {
           context.push(Routes.import_);
         }
       },
-      backgroundColor: CrosscueColors.primary,
+      backgroundColor: Theme.of(context).colorScheme.primary,
       foregroundColor: Colors.white,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(CrosscueSpacing.fabRadius),
@@ -292,7 +292,7 @@ class _FeaturedPuzzle extends StatelessWidget {
           FilledButton(
             onPressed: onTap,
             style: FilledButton.styleFrom(
-              backgroundColor: CrosscueColors.primary,
+              backgroundColor: Theme.of(context).colorScheme.primary,
               foregroundColor: Colors.white,
               minimumSize: const Size.fromHeight(46),
               shape: RoundedRectangleBorder(

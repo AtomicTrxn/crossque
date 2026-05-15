@@ -561,6 +561,7 @@ final class _FakeSolveRepository implements SolveRepository {
   @override
   Future<void> markComplete({
     required int sessionId,
+    required String puzzleId,
     required int puzzleWidth,
     required int puzzleHeight,
     required Grid<CellProgress> progress,

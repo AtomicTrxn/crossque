@@ -132,6 +132,12 @@ class _SolveScreenState extends ConsumerState<SolveScreen>
             Navigator.of(ctx).pop();
             if (mounted) context.go(Routes.home);
           },
+          onResetPuzzle: () {
+            Navigator.of(ctx).pop();
+            if (!mounted) return;
+            _completionSheetShown = false;
+            ref.read(solveProvider(widget.puzzleId).notifier).resetPuzzle();
+          },
         ),
       );
     }
@@ -157,6 +163,12 @@ class _SolveScreenState extends ConsumerState<SolveScreen>
     AsyncValue<SolveState> next,
   ) {
     next.whenData((solveState) {
+      // If a reset returned the puzzle to in-progress, allow the completion
+      // sheet to fire again on the next solve.
+      if (_completionSheetShown &&
+          solveState.status == PuzzleStatus.inProgress) {
+        _completionSheetShown = false;
+      }
       _maybeShowCompletionSheet(solveState);
       _syncClueSelectors(solveState);
     });
