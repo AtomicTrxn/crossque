@@ -15,6 +15,15 @@ on:
         description: 'Build AAB and upload to Play Store'
         type: boolean
         default: false
+      track:
+        description: 'Play Store track (only used when play_store: true)'
+        type: choice
+        default: internal
+        options:
+          - internal
+          - alpha
+          - beta
+          - production
 
 env:
   FLUTTER_VERSION: '3.41.9'
@@ -114,12 +123,12 @@ jobs:
           files: crosscue/build/app/outputs/flutter-apk/app-release.apk
 
       # ── Play Store upload (only when play_store: true) ────────────────────
-      - name: Upload to Play Store — internal track
+      - name: Upload to Play Store
         if: ${{ inputs.play_store == true }}
         uses: r0adkll/upload-google-play@v1
         with:
           serviceAccountJsonPlainText: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
           packageName: dev.tomhess.crosscue
           releaseFiles: crosscue/build/app/outputs/bundle/release/app-release.aab
-          track: internal
+          track: ${{ inputs.track }}
           status: completed
