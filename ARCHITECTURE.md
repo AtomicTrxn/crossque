@@ -441,3 +441,12 @@ not exhaustive, to avoid going stale.
 
 - **Runtime app version (Sprint 5)**: `appVersionProvider` in `core_providers.dart`
   reads the version from `PackageInfo.fromPlatform()`. Never hardcode a version string.
+
+- **Completion data authority (Sprint E, May 2026)**: Hybrid model with named
+  authorities — `SolveState` owns the live solve, `puzzle_completions` owns
+  completion history (stats, streaks, PBs), `solve_sessions` is the resumable
+  session cache for Archive and resume. See
+  [`docs/architecture/completion-authority.md`](docs/architecture/completion-authority.md)
+  for the rules, the round-trip mapping between `PuzzleStatus` and
+  `CompletionType`, the five named divergence windows, and the planned
+  code tightenings.
