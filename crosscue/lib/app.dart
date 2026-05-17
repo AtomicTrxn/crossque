@@ -94,6 +94,18 @@ class _CrosscueAppState extends ConsumerState<CrosscueApp> {
   }
 }
 
+/// App-level lifecycle observer — one of exactly two observers in the app.
+///
+/// Responsibility split:
+///   - This observer handles [AppLifecycleState.resumed] only, to retrigger
+///     the Crosshare auto-download when the app returns to the foreground.
+///   - The solve screen's [WidgetsBindingObserver] mixin handles
+///     `paused` / `hidden` (auto-pause timer) and `detached` (flush save).
+///
+/// Do not add a third observer. If you need to react to a lifecycle event,
+/// extend one of these two. The architectural rule is enforced by
+/// `test/architecture/lifecycle_observers_test.dart` — if you genuinely
+/// need a new owner, update its allowlist with a written justification.
 class _CrosshareLifecycleObserver extends WidgetsBindingObserver {
   _CrosshareLifecycleObserver(this._ref);
 
