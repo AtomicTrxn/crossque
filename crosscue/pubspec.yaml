@@ -2,7 +2,7 @@ name: crosscue
 description: A modern native crossword solver for Android.
 publish_to: 'none'
 
-version: 1.2.5+7
+version: 1.2.6+10206
 
 environment:
   # Drift 2.31+ already requires Dart 3.5, so this is the real supported floor.

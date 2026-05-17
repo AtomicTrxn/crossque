@@ -279,15 +279,18 @@ context in the generated release body rather than overloading the title.
 
 When ready to ship to Google Play, use `workflow_dispatch` from the Actions tab:
 - Select **Release** workflow → **Run workflow**
-- Enter the tag (must already exist) and set `play_store: true`
+- Enter the tag (must already exist), set `play_store: true`, and pick a `track`
+
+Available tracks: `internal` (default), `alpha` (closed testing), `beta` (open
+testing), `production`.
 
 This builds both the APK and a signed AAB, attaches the APK to the GitHub
-Release, and uploads the AAB to the Play Store internal track. It requires the
+Release, and uploads the AAB to the selected Play Store track. It requires the
 `PLAY_SERVICE_ACCOUNT_JSON` secret for a Play Console service account that has
 the app-level permissions needed for the intended release path. For internal
-testing uploads, that means at least **Release apps to testing tracks**; add
-broader production permissions only when the workflow is meant to publish to
-production.
+or closed-testing uploads, that means at least **Release apps to testing
+tracks**; add broader production permissions only when the workflow is meant
+to publish to production.
 
 ---
 
