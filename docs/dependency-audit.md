@@ -19,7 +19,7 @@ Date: May 17, 2026
 | `sqlite3_flutter_libs` | Defer on `0.5.x` | `0.6.0+eol` requires Dart 3.10 and belongs with the future `sqlite3` 3.x migration. |
 | `sqlite3` | Defer on `2.x` | `3.x` is part of the same Dart 3.10 migration set as Drift and `sqlite3_flutter_libs`. |
 | `package_info_plus` | Defer on `9.x` | `10.x` requires Dart 3.10 / newer Flutter baselines. |
-| `share_plus` | Defer on `12.x` | `13.x` requires Dart 3.10 / newer Flutter baselines. |
+| `share_plus` | Defer on `12.x` | `13.x` requires Dart 3.10 / Flutter 3.38.1 and currently conflicts with `file_picker` 11 through incompatible `win32` constraints. |
 
 ## Notes
 
@@ -28,3 +28,20 @@ Date: May 17, 2026
   supported floor.
 - The next coordinated dependency pass should decide whether to raise the floor
   to Dart 3.10 and migrate the deferred set together rather than piecemeal.
+
+## `share_plus` 13 review
+
+Issue #61 was reviewed separately after the audit:
+
+- `share_plus` `13.1.0` requires Dart `>=3.10.0` and Flutter `>=3.38.1`.
+- A dry-run solve for `share_plus:^13.1.0` fails while the app remains on
+  `file_picker:^11.0.2`: `share_plus` 13 pulls `win32` `^6.0.1`, while
+  `file_picker` 11 requires `win32` `^5.9.0`.
+- Current share flows use the modern `SharePlus.instance.share(ShareParams(...))`
+  API already:
+  - puzzle completion result sharing
+  - stats export from `StatsExportNotifier`
+  - stats export from `StatsExportService`
+
+Decision: keep `share_plus` on `12.x` until the next coordinated toolchain
+upgrade also resolves the `file_picker` / `win32` compatibility boundary.
