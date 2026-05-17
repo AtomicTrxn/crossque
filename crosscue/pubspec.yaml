@@ -42,7 +42,8 @@ dependencies:
   # File I/O
   # 11.0.2 includes the Android path-traversal fix and remains Dart 3.4+.
   file_picker: ^11.0.2
-  # Deferred at 12.x: 13.x requires Dart 3.10 / newer Flutter baselines.
+  # Deferred at 12.x: 13.x requires Dart 3.10 / Flutter 3.38.1 and conflicts
+  # with file_picker 11 through incompatible win32 constraints.
   share_plus: ^12.0.0
 
   # Puzzle ID generation
