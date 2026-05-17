@@ -72,8 +72,21 @@ class _SolveScreenState extends ConsumerState<SolveScreen>
     super.dispose();
   }
 
-  /// Auto-pause when app goes to background; auto-resume is handled by the
-  /// overlay tap (see [_PauseOverlay]).
+  /// Solve-screen lifecycle observer — one of exactly two observers in the
+  /// app.
+  ///
+  /// Responsibility split:
+  ///   - This observer handles `paused` / `hidden` (auto-pause the puzzle
+  ///     timer) and `detached` (flush any pending save).
+  ///   - The app-level [`_CrosshareLifecycleObserver`] in `app.dart`
+  ///     handles `resumed` (retrigger Crosshare auto-download).
+  ///
+  /// Do not add a third observer elsewhere. See the policy comment on
+  /// `_CrosshareLifecycleObserver` and the guard test at
+  /// `test/architecture/lifecycle_observers_test.dart`.
+  ///
+  /// Auto-resume from pause is handled by the overlay tap, see
+  /// [_PauseOverlay].
   @override
   void didChangeAppLifecycleState(AppLifecycleState lifecycleState) {
     if (lifecycleState == AppLifecycleState.paused ||
