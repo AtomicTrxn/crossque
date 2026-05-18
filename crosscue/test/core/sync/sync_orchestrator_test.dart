@@ -117,9 +117,13 @@ void main() {
     final completionsOnB =
         await deviceB.select(deviceB.puzzleCompletionsTable).get();
     expect(
-        completionsOnA.map((c) => c.clientUuid), containsAll([uuid1, uuid2]));
+      completionsOnA.map((c) => c.clientUuid),
+      containsAll([uuid1, uuid2]),
+    );
     expect(
-        completionsOnB.map((c) => c.clientUuid), containsAll([uuid1, uuid2]));
+      completionsOnB.map((c) => c.clientUuid),
+      containsAll([uuid1, uuid2]),
+    );
   });
 
   test('a remote completed session overrides a local in-progress session',
