@@ -550,10 +550,12 @@ void main() {
       expect(completions.map((c) => c.deviceId), everyElement(equals('local')));
 
       // Unique index on client_uuid is in place.
-      final indexes = await db.customSelect(
-        "SELECT name FROM sqlite_master WHERE type = 'index' "
-        "AND tbl_name = 'puzzle_completions'",
-      ).get();
+      final indexes = await db
+          .customSelect(
+            "SELECT name FROM sqlite_master WHERE type = 'index' "
+            "AND tbl_name = 'puzzle_completions'",
+          )
+          .get();
       expect(
         indexes.map((r) => r.read<String>('name')),
         contains('idx_puzzle_completions_client_uuid'),

@@ -123,8 +123,7 @@ class SessionsSyncAdapter extends NamespaceSyncAdapter {
   }) async {
     final p = blob.payload;
     final startedAt = _parseDate(p['startedAt']) ?? DateTime.now().toUtc();
-    final lastPlayedAt =
-        _parseDate(p['lastPlayedAt']) ?? blob.updatedAt;
+    final lastPlayedAt = _parseDate(p['lastPlayedAt']) ?? blob.updatedAt;
 
     await db.transaction(() async {
       final int sessionId;
@@ -200,8 +199,7 @@ class SessionsSyncAdapter extends NamespaceSyncAdapter {
       revealCount: Value((p['revealCount'] as int?) ?? 0),
       usedCheck: Value((p['usedCheck'] as bool?) ?? false),
       usedReveal: Value((p['usedReveal'] as bool?) ?? false),
-      cleanSolveEligible:
-          Value((p['cleanSolveEligible'] as bool?) ?? true),
+      cleanSolveEligible: Value((p['cleanSolveEligible'] as bool?) ?? true),
       focusRow: Value((p['focusRow'] as int?) ?? 0),
       focusCol: Value((p['focusCol'] as int?) ?? 0),
       direction: Value((p['direction'] as String?) ?? 'across'),

@@ -26,9 +26,8 @@ class CompletionsSyncAdapter extends NamespaceSyncAdapter {
         .toSet();
 
     final localRows = await db.select(db.puzzleCompletionsTable).get();
-    final missing = localRows
-        .where((r) => !remoteUuids.contains(r.clientUuid))
-        .toList();
+    final missing =
+        localRows.where((r) => !remoteUuids.contains(r.clientUuid)).toList();
 
     var pushed = 0;
     for (final row in missing) {

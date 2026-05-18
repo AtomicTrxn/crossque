@@ -32,9 +32,7 @@ class SettingsSyncAdapter extends NamespaceSyncAdapter {
     String deviceId,
   ) async {
     final all = await db.select(db.appSettingsTable).get();
-    final localRows = all
-        .where((r) => !excludedKeys.contains(r.key))
-        .toList();
+    final localRows = all.where((r) => !excludedKeys.contains(r.key)).toList();
     if (localRows.isEmpty) return NamespaceSyncOutcome.zero;
 
     var pushed = 0;
