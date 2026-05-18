@@ -12,6 +12,10 @@
 .swiftpm/
 migrate_working_dir/
 
+# CocoaPods lockfile — regenerated locally by `pod install`; not tracked.
+ios/Podfile.lock
+macos/Podfile.lock
+
 # IntelliJ related
 *.iml
 *.ipr
