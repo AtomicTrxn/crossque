@@ -210,6 +210,39 @@ jobs:
           echo "$PROFILE_BASE64" | base64 --decode \
             > "$PROFILE_DIR/release.mobileprovision"
 
+      # Flutter's auto-generated ExportOptions.plist uses automatic signing,
+      # which fails on CI (no Apple ID) and can't tell xcodebuild that the
+      # installed profile is the iCloud-capable one. Hand it an explicit
+      # manual-signing plist that maps the bundle id to the profile.
+      - name: Write ExportOptions.plist
+        working-directory: .
+        run: |
+          cat > "$RUNNER_TEMP/ExportOptions.plist" <<'EOF'
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0">
+          <dict>
+              <key>method</key>
+              <string>app-store-connect</string>
+              <key>destination</key>
+              <string>export</string>
+              <key>teamID</key>
+              <string>ZS9BL7472D</string>
+              <key>signingStyle</key>
+              <string>manual</string>
+              <key>provisioningProfiles</key>
+              <dict>
+                  <key>dev.tomhess.crosscue</key>
+                  <string>Crosscue App Store</string>
+              </dict>
+              <key>uploadSymbols</key>
+              <true/>
+              <key>compileBitcode</key>
+              <false/>
+          </dict>
+          </plist>
+          EOF
+
       - name: Build signed IPA
         run: |
           flutter build ipa \
@@ -217,7 +250,7 @@ jobs:
             --no-pub \
             --build-name=${{ steps.version.outputs.name }} \
             --build-number=${{ steps.version.outputs.code }} \
-            --export-method=app-store
+            --export-options-plist="$RUNNER_TEMP/ExportOptions.plist"
 
       - name: Upload IPA artifact
         uses: actions/upload-artifact@v4
