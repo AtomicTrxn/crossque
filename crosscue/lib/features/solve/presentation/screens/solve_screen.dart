@@ -477,8 +477,7 @@ class _SolveScreenState extends ConsumerState<SolveScreen>
   }) {
     if (hapticsEnabled) HapticFeedback.lightImpact();
     final focus = solveState.focus;
-    final currentLetter =
-        solveState.progress.cell(focus.row, focus.col).letter;
+    final currentLetter = solveState.progress.cell(focus.row, focus.col).letter;
     unawaited(
       showRebusDialogForFocus(
         context: context,

@@ -327,8 +327,7 @@ Future<bool?> showRebusDialogForFocus({
               // Mention "/" so users discover bidirectional rebuses.
               hintText: 'Example: EST  (or PB/AU for bidirectional)',
             ),
-            onSubmitted: (value) =>
-                Navigator.of(dialogContext).pop(value),
+            onSubmitted: (value) => Navigator.of(dialogContext).pop(value),
           ),
           actions: [
             TextButton(
@@ -339,8 +338,7 @@ Future<bool?> showRebusDialogForFocus({
               child: const Text('Cancel'),
             ),
             FilledButton(
-              onPressed: () =>
-                  Navigator.of(dialogContext).pop(controller.text),
+              onPressed: () => Navigator.of(dialogContext).pop(controller.text),
               child: const Text('Enter'),
             ),
           ],

@@ -251,8 +251,9 @@ class CrosswordGridPainter extends CustomPainter {
     final isRebus = letter.length > 1;
     final fontWeight =
         isRebus && letter.length >= 3 ? FontWeight.w600 : FontWeight.bold;
-    final autoshrunkFontSize =
-        isRebus ? _fitRebusFontSize(letter, baseFontSize, cellSize) : baseFontSize;
+    final autoshrunkFontSize = isRebus
+        ? _fitRebusFontSize(letter, baseFontSize, cellSize)
+        : baseFontSize;
 
     final tp = TextPainter(
       text: TextSpan(
