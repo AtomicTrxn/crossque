@@ -1,0 +1,1 @@
+First iOS release of Crosscue. Import .puz and .ipuz crosswords from any app, solve with a clean native keyboard, track your times, and pick up where you left off. Works fully offline. No accounts, no ads, no tracking.
