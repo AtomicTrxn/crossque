@@ -524,12 +524,20 @@ or diffed against future releases:
 
 | App Store Connect slot | Source folder | Dimensions |
 |------------------------|---------------|------------|
-| 6.9-Inch Display | `design/store/ios/iphone-6.9/` | 1320 × 2868 |
-| 13-Inch Display | `design/store/ios/ipad-13/` | 2064 × 2752 |
+| 6.7-Inch Display (iPhone) | `design/store/ios/iphone-6.7/` | 1284 × 2778 |
+| 12.9-Inch Display (iPad) | `design/store/ios/ipad-12.9/` | 2048 × 2732 |
 
-Apple downscales the 6.9" set for all smaller iPhone classes and the 13" set
-for smaller iPad classes — no need to upload duplicate sets unless you want
-to override the auto-scale.
+Apple downscales the 6.7" set for all smaller iPhone classes and the 12.9"
+set for smaller iPad classes — no need to upload duplicate sets unless you
+want to override the auto-scale.
+
+> **Why not the newer 6.9" / 13" sizes?** Captures from iPhone 17 Pro Max
+> (1320 × 2868) and iPad Pro M5 13" (2064 × 2752) are rejected by the
+> current App Store Connect upload UI, which only accepts up to
+> 1284 × 2778 / 2048 × 2732. If/when Apple adds dedicated 6.9" / 13" slots,
+> re-capture on the newer simulators (`iPhone 17 Pro Max` / `iPad Pro 13-inch
+> (M5)`) — the existing files in this folder were resized from those
+> captures, so a recapture replaces them exactly.
 
 Per-version release notes live as `design/store/ios/release-notes-X.Y.Z.txt`.
 
