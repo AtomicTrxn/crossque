@@ -1,0 +1,142 @@
+# iOS Release QA Checklist
+
+Run this once per public-facing iOS release (TestFlight external, App Store) on
+both an iPhone and an iPad. Takes ~15 minutes per device once the build is
+installed.
+
+**Prerequisites**
+- TestFlight build processed and installable (you'll get an email from Apple
+  when processing finishes — usually 5-30 minutes after the workflow's
+  TestFlight upload step succeeds)
+- TestFlight app installed on the target devices
+- A `.puz` or `.ipuz` file available — easiest: AirDrop one from your Mac, or
+  open from Files / Mail / Messages
+
+**Known issues to skip** (these are already filed; don't re-report)
+- **#105** — Tapping outside the rebus modal (or pressing Enter on iOS) shows
+  a red debug-screen. Release builds have assertions stripped, so this only
+  shows up on a debug install. If your TestFlight build still surfaces it,
+  file a new bug.
+
+---
+
+## 1. Install & first launch
+
+- [ ] App installs from TestFlight without errors
+- [ ] App icon and display name render correctly on the home screen
+  (icon should not be the default Flutter "F", name should be "Crosscue")
+- [ ] First launch shows onboarding or a non-empty home screen (no crash, no
+  blank white screen)
+- [ ] Status bar text is visible (light text on dark backgrounds, dark on light)
+- [ ] No content is clipped by the Dynamic Island / notch / home indicator
+
+## 2. Import a puzzle
+
+- [ ] Share a `.puz` file from another app (Files, Mail, Messages) → Crosscue
+  appears in the share sheet
+- [ ] Selecting Crosscue opens the puzzle directly (no intermediate "imported"
+  screen issues)
+- [ ] Repeat with a `.ipuz` file
+- [ ] Imported puzzles appear in the home/library list with correct metadata
+  (title, source, date)
+
+## 3. Solving — basic input
+
+- [ ] Tap an empty cell → cell highlights, keyboard appears
+- [ ] Type a letter → letter fills the cell, focus advances to the next cell
+  in the current direction
+- [ ] Tap the same cell again → solve direction flips between Across and Down
+- [ ] Swipe left/right or up/down across cells → focus moves accordingly
+- [ ] Backspace → removes the current cell's letter, focus moves back one cell
+- [ ] Tap a clue in the clue list → grid jumps to that clue's first cell
+
+## 4. Solving — rebus
+
+- [ ] Long-press a cell → rebus dialog opens with current content pre-filled
+- [ ] Type a multi-letter entry (e.g., `EST`) and press the **Enter** button →
+  cell shows the rebus correctly, focus advances
+- [ ] Long-press the same cell again → rebus dialog reopens with the current
+  rebus content pre-filled (matches NYT pre-fill behavior)
+- [ ] **Skip:** tap-outside-to-save. Known bug #105 — close with the Enter
+  or Cancel button instead.
+
+## 5. Persistence
+
+- [ ] Solve about ⅓ of a puzzle, then put the app in the background (swipe
+  up to the home screen)
+- [ ] Reopen Crosscue → puzzle resumes exactly where you left off, timer
+  continues from the right point
+- [ ] Force-quit Crosscue (swipe up + away from app switcher) → relaunch →
+  same puzzle, same progress, timer correct
+
+## 6. Stats
+
+- [ ] Complete a small puzzle end-to-end → stats screen shows the entry with
+  the correct time and date
+- [ ] Streak indicator (if shown) reflects the completion
+
+## 7. Settings & privacy
+
+- [ ] Settings → toggle theme (Light / Dark / System) → app theme switches
+  correctly without restarting
+- [ ] Settings → Privacy & Data → Privacy policy → opens the published policy
+  in Safari (`https://atomictrxn.github.io/crosscue/privacy.html`)
+- [ ] Any other in-app links resolve to working URLs
+
+## 8. Visual & accessibility
+
+- [ ] Toggle dark mode → all screens still look correct (no white-on-white
+  text, no missing icons)
+- [ ] Toggle iOS Dynamic Type to "Larger Accessibility Size" (Settings →
+  Accessibility → Display & Text Size → Larger Text) → app text scales, no
+  overlapping content
+- [ ] (Optional) Toggle Increase Contrast and Reduce Transparency → app
+  remains usable
+- [ ] (Optional) VoiceOver smoke test on the home screen → focusable
+  controls are reachable and announced
+
+## 9. iPad-specific
+
+Skip if testing on iPhone only.
+
+- [ ] App launches in portrait → grid uses the wider layout, not a centered
+  iPhone-sized column
+- [ ] Rotate to landscape → grid + clue panel reflow correctly (no clipping,
+  no overlapping panels)
+- [ ] Split View with another app side-by-side → app reflows at smaller
+  widths without crashing or losing state
+- [ ] Slide Over (small floating Crosscue window) → app remains usable, no
+  rendering glitches
+- [ ] iPad keyboard shortcuts (if supported) — Cmd-Z / Cmd-Shift-Z, arrow
+  keys, return — behave as expected
+
+## 10. Edge cases
+
+- [ ] Cycle Airplane Mode on/off → no crashes, no offline error banners that
+  shouldn't appear (Crosscue is offline-first)
+- [ ] Open a puzzle, lock the device, wait 30s, unlock → app resumes at the
+  same cell, timer doesn't lose seconds inappropriately
+- [ ] Receive a notification or phone call mid-solve → app handles
+  interruption gracefully when foregrounded again
+- [ ] Low-memory: install on the oldest supported device you own (minimum
+  iOS target is `13.0` per `Runner.xcodeproj`) and confirm core flows still
+  work
+
+---
+
+## Reporting bugs found during QA
+
+For each bug:
+1. Take a screenshot or screen recording on the device
+2. Open a new GitHub issue at https://github.com/AtomicTrxn/crosscue/issues/new
+3. Include: device + iOS version, reproduction steps, expected vs. actual,
+   the screenshot or recording
+
+Block submitting for review if any item in sections 1-7 fails. Items in 8-10
+are nice-to-have for v1.0 — file as enhancement issues rather than blockers.
+
+## After QA passes
+
+1. Mark this release's QA pass complete in the release issue
+2. App Store Connect → submit the prepared build for review
+3. Monitor App Store Connect for review status; typical turnaround is 1-3 days
