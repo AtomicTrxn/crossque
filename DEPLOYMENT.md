@@ -202,6 +202,72 @@ appropriate when iterating on a specific failure — **always finish with
 
 ---
 
+## Integration Tests
+
+Widget-level unit tests live under `crosscue/test/`. End-to-end tests that drive
+the real app on a connected simulator or device live under
+`crosscue/integration_test/` and use the [`integration_test`](https://docs.flutter.dev/cookbook/testing/integration/introduction)
+package.
+
+| File | What it covers |
+|------|----------------|
+| `integration_test/app_launch_test.dart` | Launch smoke test — boots the app, asserts MaterialApp renders, no error-screen text leaks. ~6 s on warm cache. |
+| `integration_test/seed_and_solve_test.dart` | Seeds a 3×3 puzzle via the production `ImportRepository`, bypasses onboarding through `appSettingsProvider`, navigates home → solve, asserts the solve screen renders (clues, keyboard, timer). ~20 s on warm cache. |
+
+### Running on iOS
+
+```bash
+cd crosscue
+xcrun simctl list devices available | grep -i "iPad Pro 13"   # or iPhone Pro Max
+xcrun simctl boot <udid>
+open -a Simulator
+
+flutter test integration_test/app_launch_test.dart -d <udid>
+flutter test integration_test/seed_and_solve_test.dart -d <udid>
+```
+
+### Running on Android
+
+```bash
+emulator -avd <avd-name> &
+flutter test integration_test/<file>.dart -d <android-device-id>
+```
+
+### Conventions
+
+- **Never use `pumpAndSettle`.** Crosscue has long-running Riverpod listeners
+  (stats stream, solve timer) that keep the widget tree from going idle — the
+  default 10-minute timeout will fire. Use a fixed-budget pump helper:
+  ```dart
+  Future<void> pumpFor(WidgetTester tester, Duration total) async {
+    const slice = Duration(milliseconds: 200);
+    final ticks = (total.inMilliseconds / slice.inMilliseconds).ceil();
+    for (var i = 0; i < ticks; i++) {
+      await tester.pump(slice);
+    }
+  }
+  ```
+- **Bypass onboarding programmatically** rather than tapping Skip — the
+  tutorial keyboard widget held focus that didn't release cleanly on dismiss
+  in earlier integration runs. Set the flag via
+  `appSettingsProvider.setHasSeenOnboarding(true)` and invalidate
+  `hasSeenOnboardingProvider`.
+- **TAG every step** with `debugPrint('TAG step=N ...')`. The framework's
+  generic `_pendingExceptionDetails != null` failure hides underlying
+  exceptions; TAG checkpoints let you locate exactly which step bumped
+  the framework's error queue.
+
+### Deferred coverage
+
+[Issue #106](https://github.com/AtomicTrxn/crosscue/issues/106) tracks PRs 3-5
+to extend the suite: grid-cell taps + letter input, rebus modal, app-lifecycle
+persistence, dark-mode toggle, and a runner script that wires the tests into
+CI. Until those land, the manual checklist at
+[`docs/qa/ios-release-checklist.md`](docs/qa/ios-release-checklist.md) is the
+required pre-release pass.
+
+---
+
 ## Pull Request Workflow
 
 All code and documentation changes should land through a pull request into
