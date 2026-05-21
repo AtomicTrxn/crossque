@@ -286,73 +286,141 @@ Future<bool?> showRebusDialogForFocus({
   required String puzzleId,
   required String currentLetter,
 }) async {
-  // Pre-fill any existing entry — single-char or multi-char — so the user
-  // can "promote" a single letter into a rebus by appending. (NYT Games
-  // pre-fills similarly; see docs/architecture/rebus-entry.md §4.4.)
-  final controller = TextEditingController(text: currentLetter);
-  // Captured by PopScope: when the user taps outside (barrier dismiss)
-  // we commit the current text rather than discarding it. The Cancel
-  // button explicitly nulls this out before popping.
-  String? barrierPending;
-  bool cancelled = false;
-  final value = await showDialog<String>(
+  // The latest text the user typed, captured via a callback from the
+  // dialog. Used on barrier dismiss (matches NYT's "tap anywhere outside
+  // to save your rebus"), where Navigator.pop() runs with no result.
+  String latestText = currentLetter;
+
+  final outcome = await showDialog<RebusOutcome>(
     context: context,
-    // Tap-outside-to-save (matches NYT's "tap anywhere inside the grid to
-    // close and save your rebus"). Cancel button overrides via the
-    // `cancelled` flag captured below.
     barrierDismissible: true,
-    builder: (dialogContext) {
-      return PopScope<Object?>(
-        canPop: true,
-        onPopInvokedWithResult: (didPop, result) {
-          if (!didPop) return;
-          if (cancelled) return;
-          if (result == null) {
-            // Barrier tap (or system back) — save the current text.
-            barrierPending = controller.text;
-          }
-        },
-        child: AlertDialog(
-          title: const Text('Enter rebus'),
-          content: TextField(
-            controller: controller,
-            autofocus: true,
-            textCapitalization: TextCapitalization.characters,
-            maxLength: SolveNotifier.rebusMaxLength,
-            inputFormatters: [
-              FilteringTextInputFormatter.allow(_rebusFilterRe),
-            ],
-            decoration: const InputDecoration(
-              labelText: 'Cell answer',
-              // Mention "/" so users discover bidirectional rebuses.
-              hintText: 'Example: EST  (or PB/AU for bidirectional)',
-            ),
-            onSubmitted: (value) => Navigator.of(dialogContext).pop(value),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                cancelled = true;
-                Navigator.of(dialogContext).pop();
-              },
-              child: const Text('Cancel'),
-            ),
-            FilledButton(
-              onPressed: () => Navigator.of(dialogContext).pop(controller.text),
-              child: const Text('Enter'),
-            ),
-          ],
-        ),
-      );
-    },
+    builder: (dialogContext) => RebusDialog(
+      initialText: currentLetter,
+      onTextChanged: (text) => latestText = text,
+    ),
   );
-  controller.dispose();
-  if (cancelled) return null;
-  final effective = value ?? barrierPending;
+
+  // The controller is owned by RebusDialog's State and disposed in
+  // dispose() — i.e. AFTER the route's tree finishes unmounting, not the
+  // moment showDialog's future resolves. That's the fix for #105: the
+  // previous design disposed the controller while the TextField subtree
+  // was still in the tree mid-pop animation, tripping the framework's
+  // `_dependents.isEmpty` assertion.
+
+  final String? effective = switch (outcome) {
+    RebusOutcomeCancelled() => null, // explicit Cancel — drop input
+    RebusOutcomeEntered(:final text) => text, // Enter button / Enter key
+    null => latestText, // barrier tap — save whatever the user typed
+  };
+
   if (effective == null) return null;
+
   final notifier = ref.read(solveProvider(puzzleId).notifier);
   // inputRebus normalizes (uppercases, strips non-`[A-Z/]`, caps at 6) and
   // delegates back to inputLetter when the result is one character — so
   // the dialog is never a dead end for users who change their mind.
   return notifier.inputRebus(effective);
+}
+
+/// Dialog result. Sealed so the caller's switch is exhaustive.
+///
+/// Public + `@visibleForTesting` so the regression test in
+/// `rebus_dialog_dispose_test.dart` can match on it without us having
+/// to expose Riverpod scaffolding to drive the production entry point.
+@visibleForTesting
+sealed class RebusOutcome {
+  const RebusOutcome();
+}
+
+@visibleForTesting
+class RebusOutcomeCancelled extends RebusOutcome {
+  const RebusOutcomeCancelled();
+}
+
+@visibleForTesting
+class RebusOutcomeEntered extends RebusOutcome {
+  const RebusOutcomeEntered(this.text);
+  final String text;
+}
+
+/// Stateful dialog body that owns the TextEditingController. Disposing
+/// the controller in [State.dispose] is what fixes #105 — the controller's
+/// lifetime now matches the widget tree, so it can't outlive its TextField
+/// dependents (or, equivalently, be torn down while they're still mounted).
+///
+/// Public + `@visibleForTesting` so the regression test can show the
+/// dialog directly via `showDialog` without needing the full Riverpod
+/// scope that `showRebusDialogForFocus` requires.
+@visibleForTesting
+class RebusDialog extends StatefulWidget {
+  const RebusDialog({
+    super.key,
+    required this.initialText,
+    required this.onTextChanged,
+  });
+
+  final String initialText;
+
+  /// Fires on every text change so the caller can capture the latest
+  /// value for the barrier-dismiss "save what you typed" flow without
+  /// the State having to reach outside its own scope.
+  final ValueChanged<String> onTextChanged;
+
+  @override
+  State<RebusDialog> createState() => _RebusDialogState();
+}
+
+class _RebusDialogState extends State<RebusDialog> {
+  late final TextEditingController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = TextEditingController(text: widget.initialText);
+    _controller.addListener(_emitText);
+  }
+
+  void _emitText() => widget.onTextChanged(_controller.text);
+
+  @override
+  void dispose() {
+    _controller.removeListener(_emitText);
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('Enter rebus'),
+      content: TextField(
+        controller: _controller,
+        autofocus: true,
+        textCapitalization: TextCapitalization.characters,
+        maxLength: SolveNotifier.rebusMaxLength,
+        inputFormatters: [
+          FilteringTextInputFormatter.allow(_rebusFilterRe),
+        ],
+        decoration: const InputDecoration(
+          labelText: 'Cell answer',
+          // Mention "/" so users discover bidirectional rebuses.
+          hintText: 'Example: EST  (or PB/AU for bidirectional)',
+        ),
+        onSubmitted: (value) =>
+            Navigator.of(context).pop(RebusOutcomeEntered(value)),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () =>
+              Navigator.of(context).pop(const RebusOutcomeCancelled()),
+          child: const Text('Cancel'),
+        ),
+        FilledButton(
+          onPressed: () =>
+              Navigator.of(context).pop(RebusOutcomeEntered(_controller.text)),
+          child: const Text('Enter'),
+        ),
+      ],
+    );
+  }
 }

@@ -1,38 +1,55 @@
+// Regression tests for #105 — the rebus dialog's TextEditingController
+// used to be created at the call-site and disposed immediately after
+// showDialog's Future resolved. That tripped Flutter's
+// `_dependents.isEmpty` framework assertion: with `barrierDismissible:
+// true`, the route pops asynchronously, and the TextField subtree was
+// still in the tree (mid-pop animation) when the outer dispose() ran.
+//
+// Fix: `RebusDialog` is now a StatefulWidget that owns the controller
+// in its own State. The controller's lifetime matches the widget tree,
+// so dispose() runs at the right moment (after the route unmounts) and
+// the framework no longer sees dangling dependents.
+//
+// These tests open the real `RebusDialog` via `showDialog`, dismiss it
+// every way the production code allows (Enter, Cancel, barrier tap,
+// system back), and assert that no Flutter error surfaces. The
+// recorded text / outcome from each path is also verified to catch
+// regressions in the "save what you typed on barrier tap" behavior.
+
+import 'package:crosscue/features/solve/presentation/widgets/crossword_grid.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-/// Regression test for T6: verifies that a TextEditingController created
-/// before showDialog is always disposed after the dialog closes, regardless
-/// of how it is dismissed (OK button, system back, barrier tap).
 void main() {
-  group('rebus dialog controller disposal', () {
-    Future<void> openAndDismiss(
+  group('RebusDialog — #105 regression', () {
+    /// Pumps a host scaffold with a button that opens the real
+    /// `RebusDialog`, taps it, then runs the supplied [dismiss] callback.
+    ///
+    /// Returns the outcome the dialog popped with, plus the last
+    /// `onTextChanged` value observed (which is what the production
+    /// caller uses on the barrier-dismiss path).
+    Future<({RebusOutcome? outcome, String latestText})> openAndDismiss(
       WidgetTester tester, {
-      required Future<void> Function(BuildContext ctx) dismiss,
+      required Future<void> Function(WidgetTester) dismiss,
+      String initialText = 'A',
     }) async {
-      bool disposed = false;
+      RebusOutcome? popped;
+      var latestText = initialText;
 
       await tester.pumpWidget(
         MaterialApp(
-          home: Builder(
-            builder: (context) => Scaffold(
-              body: ElevatedButton(
+          home: Scaffold(
+            body: Builder(
+              builder: (ctx) => ElevatedButton(
                 onPressed: () async {
-                  final controller = TextEditingController();
-                  await showDialog<String>(
-                    context: context,
-                    builder: (ctx) => AlertDialog(
-                      content: TextField(controller: controller),
-                      actions: [
-                        TextButton(
-                          onPressed: () => Navigator.pop(ctx),
-                          child: const Text('OK'),
-                        ),
-                      ],
+                  popped = await showDialog<RebusOutcome>(
+                    context: ctx,
+                    barrierDismissible: true,
+                    builder: (_) => RebusDialog(
+                      initialText: initialText,
+                      onTextChanged: (text) => latestText = text,
                     ),
                   );
-                  controller.dispose();
-                  disposed = true;
                 },
                 child: const Text('Open'),
               ),
@@ -43,44 +60,99 @@ void main() {
 
       await tester.tap(find.text('Open'));
       await tester.pumpAndSettle();
+      expect(find.byType(AlertDialog), findsOneWidget);
 
-      final ctx = tester.element(find.byType(AlertDialog));
-      await dismiss(ctx);
+      await dismiss(tester);
       await tester.pumpAndSettle();
 
+      // The actual #105 regression check: no framework error fired
+      // during dismissal.
       expect(
-        disposed,
-        isTrue,
-        reason: 'Controller must be disposed after dialog closes',
+        tester.takeException(),
+        isNull,
+        reason: 'RebusDialog dismissal must not surface a framework '
+            'exception (regression for #105 _dependents.isEmpty).',
       );
+      expect(find.byType(AlertDialog), findsNothing);
+
+      return (outcome: popped, latestText: latestText);
     }
 
-    testWidgets('disposes controller when OK button is tapped', (tester) async {
-      await openAndDismiss(
+    testWidgets('Enter button pops with the typed text', (tester) async {
+      final r = await openAndDismiss(
         tester,
-        dismiss: (_) async => tester.tap(find.text('OK')),
+        dismiss: (t) async {
+          await t.enterText(find.byType(TextField), 'EST');
+          await t.tap(find.text('Enter'));
+        },
       );
+      expect(r.outcome, isA<RebusOutcomeEntered>());
+      expect((r.outcome! as RebusOutcomeEntered).text, equals('EST'));
     });
 
-    testWidgets('disposes controller on system back', (tester) async {
-      await openAndDismiss(
+    testWidgets('Cancel button pops with the cancelled sentinel',
+        (tester) async {
+      final r = await openAndDismiss(
         tester,
-        dismiss: (ctx) async {
+        dismiss: (t) async {
+          await t.enterText(find.byType(TextField), 'IGNORED');
+          await t.tap(find.text('Cancel'));
+        },
+      );
+      expect(r.outcome, isA<RebusOutcomeCancelled>());
+    });
+
+    testWidgets('barrier tap pops with null AND the last text was emitted',
+        (tester) async {
+      final r = await openAndDismiss(
+        tester,
+        dismiss: (t) async {
+          await t.enterText(find.byType(TextField), 'EST');
+          // Top-left of the screen is well outside the centered AlertDialog
+          // and inside the ModalBarrier hit area.
+          await t.tapAt(const Offset(10, 10));
+        },
+      );
+      // Barrier dismiss: outer code reads latestText, not the outcome.
+      expect(r.outcome, isNull);
+      expect(r.latestText, equals('EST'));
+    });
+
+    testWidgets('barrier tap with no edits still has the prefilled text',
+        (tester) async {
+      final r = await openAndDismiss(
+        tester,
+        initialText: 'A',
+        dismiss: (t) async => t.tapAt(const Offset(10, 10)),
+      );
+      expect(r.outcome, isNull);
+      expect(r.latestText, equals('A'));
+    });
+
+    testWidgets('system back pops cleanly with null', (tester) async {
+      final r = await openAndDismiss(
+        tester,
+        dismiss: (t) async {
           final navigator =
-              tester.state<NavigatorState>(find.byType(Navigator).last);
+              t.state<NavigatorState>(find.byType(Navigator).last);
           navigator.pop();
         },
       );
+      // pop() with no argument — same shape as barrier dismiss.
+      expect(r.outcome, isNull);
     });
 
-    testWidgets('disposes controller on barrier tap', (tester) async {
-      await openAndDismiss(
+    testWidgets('Enter key submission pops with the typed text',
+        (tester) async {
+      final r = await openAndDismiss(
         tester,
-        dismiss: (_) async {
-          // Tap outside the dialog (top-left corner of the screen).
-          await tester.tapAt(const Offset(10, 10));
+        dismiss: (t) async {
+          await t.enterText(find.byType(TextField), 'EST');
+          await t.testTextInput.receiveAction(TextInputAction.done);
         },
       );
+      expect(r.outcome, isA<RebusOutcomeEntered>());
+      expect((r.outcome! as RebusOutcomeEntered).text, equals('EST'));
     });
   });
 }
