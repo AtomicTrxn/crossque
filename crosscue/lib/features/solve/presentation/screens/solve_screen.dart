@@ -46,6 +46,17 @@ class _SolveScreenState extends ConsumerState<SolveScreen>
   bool _hapticsEnabled = true;
   bool _soundsEnabled = false;
 
+  // Latest snapshot of the solve provider's state, kept in sync via the
+  // listener installed in initState. Cached so dispose() can decide whether
+  // to flush the autosave without calling ref.read — Riverpod forbids `ref`
+  // use during element deactivation (the framework throws StateError).
+  SolveState? _lastSolveState;
+
+  // Cached notifier reference. Captured once in initState so dispose() can
+  // call flushPendingSave() without going through `ref`. The notifier itself
+  // outlives the widget (Riverpod owns its lifecycle).
+  SolveNotifier? _solveNotifier;
+
   @override
   void initState() {
     super.initState();
@@ -53,6 +64,7 @@ class _SolveScreenState extends ConsumerState<SolveScreen>
     _confettiController = ConfettiController(
       duration: const Duration(milliseconds: 800),
     );
+    _solveNotifier = ref.read(solveProvider(widget.puzzleId).notifier);
     ref.listenManual(solveProvider(widget.puzzleId), _onSolveStateChanged);
     ref.listenManual(
       hapticsEnabledProvider,
@@ -73,14 +85,16 @@ class _SolveScreenState extends ConsumerState<SolveScreen>
     // the autosave so solve_sessions reflects the completed status even if the
     // markComplete write is still in flight or fails. See
     // docs/architecture/completion-authority.md (divergence window 1).
-    final solveState = switch (ref.read(solveProvider(widget.puzzleId))) {
-      AsyncData(:final value) => value,
-      _ => null,
-    };
-    if (solveState != null && solveState.status.isTerminal) {
-      unawaited(
-        ref.read(solveProvider(widget.puzzleId).notifier).flushPendingSave(),
-      );
+    //
+    // _lastSolveState + _solveNotifier are cached during initState/listen
+    // because Riverpod's `ref` is unsafe to use here (the widget is being
+    // deactivated). Caught by integration_test/seed_and_solve_test.dart.
+    final solveState = _lastSolveState;
+    final notifier = _solveNotifier;
+    if (solveState != null &&
+        solveState.status.isTerminal &&
+        notifier != null) {
+      unawaited(notifier.flushPendingSave());
     }
     _confettiController.dispose();
     WidgetsBinding.instance.removeObserver(this);
@@ -192,6 +206,9 @@ class _SolveScreenState extends ConsumerState<SolveScreen>
     AsyncValue<SolveState> next,
   ) {
     next.whenData((solveState) {
+      // Cache so dispose() can read the latest terminal status without
+      // calling ref.read on an unmounted ConsumerStatefulElement.
+      _lastSolveState = solveState;
       // If a reset returned the puzzle to in-progress, allow the completion
       // sheet to fire again on the next solve.
       if (_completionSheetShown &&
