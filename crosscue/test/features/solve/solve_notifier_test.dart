@@ -17,11 +17,13 @@ import 'package:crosscue/features/solve/domain/models/cell_progress.dart';
 import 'package:crosscue/features/solve/domain/models/check_result.dart';
 import 'package:crosscue/features/solve/domain/models/focus_position.dart';
 import 'package:crosscue/features/solve/domain/repositories/solve_repository.dart';
+import 'package:crosscue/features/solve/presentation/notifiers/solve_elapsed_notifier.dart';
 import 'package:crosscue/features/solve/presentation/notifiers/solve_notifier.dart';
 import 'package:crosscue/features/solve/presentation/providers/solve_providers.dart';
 import 'package:crosscue/features/stats/domain/models/stats_data.dart';
 import 'package:crosscue/features/stats/domain/repositories/stats_repository.dart';
 import 'package:crosscue/features/stats/presentation/providers/stats_providers.dart';
+import 'package:fake_async/fake_async.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -320,6 +322,73 @@ void main() {
     final completed = await solveRepository.completed.future;
     expect(completed.status, PuzzleStatus.solved);
     expect(completed.completionType, CompletionType.clean);
+  });
+
+  // --------------------------------------------------------------------
+  // Elapsed-seconds split (#119)
+  //
+  // The per-second timer used to live on SolveNotifier and mutate its
+  // state every tick. That broadcast through `solveProvider` and rebuilt
+  // the whole solve screen on idle. Ownership moved to
+  // `solveElapsedSecondsProvider`; SolveNotifier's state must no longer
+  // change with the wall clock.
+  // --------------------------------------------------------------------
+
+  test('a timer tick does not mutate SolveNotifier.state', () {
+    fakeAsync((async) {
+      final puzzle = _puzzle();
+      final container = _containerFor(puzzle, _blankProgress());
+      addTearDown(container.dispose);
+
+      final encodedId = Uri.encodeComponent(puzzle.id);
+      final provider = solveProvider(encodedId);
+      final elapsedProvider = solveElapsedSecondsProvider(encodedId);
+      // Production keeps these providers alive via SolveScreen's
+      // `ref.watch(solveProvider)` and SolveAppBar's
+      // `ref.watch(solveElapsedSecondsProvider)`. Without an active listener
+      // the auto-dispose runtime tears them down between reads. Listen with
+      // no-ops to mirror the production liveness.
+      container
+        ..listen(provider, (_, __) {})
+        ..listen(elapsedProvider, (_, __) {});
+
+      // Kick off the build inside the fake zone so the Timer.periodic
+      // started by elapsed-notifier `start()` is bound to the fake clock.
+      // Drain the microtasks the async build chain queues.
+      container.read(provider.future);
+      async.flushMicrotasks();
+
+      final initialState = container.read(provider).value;
+      expect(
+        initialState,
+        isNotNull,
+        reason: 'SolveNotifier.build did not complete after '
+            'flushMicrotasks; test fakes may be using real-time async.',
+      );
+      expect(initialState!.elapsedSeconds, 0);
+
+      // Three seconds of fake-clock ticks must advance the elapsed
+      // notifier but NOT mutate SolveNotifier.state.
+      async.elapse(const Duration(seconds: 3));
+      expect(container.read(elapsedProvider), 3);
+
+      // SolveNotifier's persisted snapshot must NOT have advanced — the
+      // canonical guarantee of #119. The live elapsed value is read via
+      // the dedicated provider above; the in-state snapshot only updates
+      // on save/pause/completion boundaries.
+      final afterTickState = container.read(provider).value!;
+      expect(
+        afterTickState.elapsedSeconds,
+        0,
+        reason: 'SolveState.elapsedSeconds must not advance on wall-clock '
+            'ticks — broadcasts moved to solveElapsedSecondsProvider',
+      );
+      expect(
+        identical(initialState, afterTickState),
+        isTrue,
+        reason: 'SolveState identity must be unchanged across timer ticks',
+      );
+    });
   });
 }
 

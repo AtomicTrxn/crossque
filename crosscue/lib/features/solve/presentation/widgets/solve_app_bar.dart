@@ -1,8 +1,10 @@
+import 'package:crosscue/core/domain/models/enums.dart';
 import 'package:crosscue/core/theme/app_theme.dart';
 import 'package:crosscue/core/theme/design_tokens.dart';
 import 'package:crosscue/core/theme/theme_colors.dart';
 import 'package:crosscue/features/settings/presentation/providers/settings_providers.dart';
 import 'package:crosscue/features/solve/domain/models/check_result.dart';
+import 'package:crosscue/features/solve/presentation/notifiers/solve_elapsed_notifier.dart';
 import 'package:crosscue/features/solve/presentation/notifiers/solve_notifier.dart';
 import 'package:crosscue/features/solve/presentation/notifiers/solve_state.dart';
 import 'package:flutter/material.dart';
@@ -39,6 +41,15 @@ class SolveAppBar extends ConsumerWidget implements PreferredSizeWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final sourceLabel = _sourceLabel(solveState.puzzle.metadata.sourceId);
+    // The AppBar is the only widget that needs the per-second tick.
+    // Watching the dedicated elapsed-seconds provider keeps the rest of
+    // the solve screen out of the per-tick rebuild path. See #119.
+    // On terminal states the snapshot in solveState is authoritative:
+    // the elapsed-notifier may have been disposed (auto-dispose) or
+    // already stopped, so trust the persisted value.
+    final liveElapsed = solveState.status.isTerminal
+        ? solveState.elapsedSeconds
+        : ref.watch(solveElapsedSecondsProvider(puzzleId));
 
     return AppBar(
       toolbarHeight: CrosscueSpacing.appBarHeightSolve,
@@ -77,7 +88,7 @@ class SolveAppBar extends ConsumerWidget implements PreferredSizeWidget {
         if (isComplete)
           Center(
             child: _TimerDisplay(
-              seconds: solveState.elapsedSeconds,
+              seconds: liveElapsed,
               isPaused: false,
             ),
           )
@@ -93,7 +104,7 @@ class SolveAppBar extends ConsumerWidget implements PreferredSizeWidget {
             },
             child: Center(
               child: _TimerDisplay(
-                seconds: solveState.elapsedSeconds,
+                seconds: liveElapsed,
                 isPaused: solveState.isPaused,
               ),
             ),
