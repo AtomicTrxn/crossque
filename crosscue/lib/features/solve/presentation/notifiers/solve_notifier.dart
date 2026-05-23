@@ -13,6 +13,7 @@ import 'package:crosscue/features/solve/domain/models/solve_errors.dart';
 import 'package:crosscue/features/solve/domain/services/clue_progress_calculator.dart';
 import 'package:crosscue/features/solve/domain/services/grid_progress_mutator.dart';
 import 'package:crosscue/features/solve/domain/services/solve_focus_navigator.dart';
+import 'package:crosscue/features/solve/presentation/notifiers/solve_elapsed_notifier.dart';
 import 'package:crosscue/features/solve/presentation/notifiers/solve_state.dart';
 import 'package:crosscue/features/solve/presentation/providers/solve_providers.dart';
 import 'package:crosscue/features/stats/presentation/providers/stats_providers.dart';
@@ -33,7 +34,6 @@ class SolveNotifier extends _$SolveNotifier {
   /// breaking the cell autoshrink budget in the painter.
   static const int rebusMaxLength = 6;
 
-  StreamSubscription<int>? _timerSub;
   Timer? _saveDebounce;
 
   /// Safely read the current SolveState from AsyncValue.
@@ -42,10 +42,20 @@ class SolveNotifier extends _$SolveNotifier {
         _ => null,
       };
 
+  /// Live elapsed-second counter for this puzzle. Owned by
+  /// [SolveElapsedSeconds] so that per-second ticks don't broadcast through
+  /// the SolveNotifier and rebuild the entire solve screen each second.
+  ///
+  /// SolveNotifier still treats this as the canonical source of elapsed time
+  /// when it saves to the DB or persists a completion — the snapshot kept on
+  /// [SolveState.elapsedSeconds] is refreshed from here at save/pause/
+  /// completion boundaries so [CompletionSheet] (which reads from state) sees
+  /// the right value.
+  int get _elapsedSeconds => ref.read(solveElapsedSecondsProvider(puzzleId));
+
   @override
   Future<SolveState> build(String puzzleId) async {
     ref.onDispose(() {
-      _timerSub?.cancel();
       _saveDebounce?.cancel();
     });
 
@@ -58,14 +68,21 @@ class SolveNotifier extends _$SolveNotifier {
     final session = await solveRepo.createOrResumeSession(puzzle);
     final stats = await ref.read(statsRepositoryProvider).getStats();
 
-    _startTimer();
+    final elapsedSec = session.elapsedMs ~/ 1000;
+    final elapsedNotifier = ref
+        .read(solveElapsedSecondsProvider(puzzleId).notifier)
+      ..seed(elapsedSec);
+    // Don't tick while paused or after a terminal completion is resumed.
+    if (!session.isPaused && !session.status.isTerminal) {
+      elapsedNotifier.start();
+    }
 
     return SolveState(
       puzzle: puzzle,
       progress: session.progress,
       focus: session.focus,
       status: session.status,
-      elapsedSeconds: session.elapsedMs ~/ 1000,
+      elapsedSeconds: elapsedSec,
       isPaused: session.isPaused,
       sessionId: session.sessionId,
       checkCount: session.checkCount,
@@ -81,21 +98,14 @@ class SolveNotifier extends _$SolveNotifier {
   // Timer
   // ---------------------------------------------------------------------------
 
-  void _startTimer() {
-    _timerSub?.cancel();
-    _timerSub =
-        Stream<int>.periodic(const Duration(seconds: 1), (i) => i).listen((_) {
-      final s = _s;
-      if (s == null || s.isPaused) return;
-      if (s.status.isTerminal) return;
-      state = AsyncData(s.copyWith(elapsedSeconds: s.elapsedSeconds + 1));
-    });
-  }
-
   void pause() {
     final s = _s;
     if (s == null || s.isPaused) return;
-    state = AsyncData(s.copyWith(isPaused: true));
+    ref.read(solveElapsedSecondsProvider(puzzleId).notifier).stop();
+    // Snapshot elapsed into the state so the autosave below persists the
+    // exact second the user paused on.
+    state =
+        AsyncData(s.copyWith(isPaused: true, elapsedSeconds: _elapsedSeconds));
     _saveNow();
   }
 
@@ -103,6 +113,9 @@ class SolveNotifier extends _$SolveNotifier {
     final s = _s;
     if (s == null || !s.isPaused) return;
     state = AsyncData(s.copyWith(isPaused: false));
+    if (!s.status.isTerminal) {
+      ref.read(solveElapsedSecondsProvider(puzzleId).notifier).start();
+    }
   }
 
   // ---------------------------------------------------------------------------
@@ -398,7 +411,7 @@ class SolveNotifier extends _$SolveNotifier {
       cells: GridProgressMutator.puzzleCells(s.puzzle),
     );
 
-    _timerSub?.cancel();
+    ref.read(solveElapsedSecondsProvider(puzzleId).notifier).stop();
     _saveDebounce?.cancel();
 
     final completed = s.copyWith(
@@ -407,6 +420,9 @@ class SolveNotifier extends _$SolveNotifier {
       revealCount: s.revealCount + 1,
       usedReveal: true,
       cleanSolveEligible: false,
+      // Snapshot the live counter so the persisted completion + the
+      // CompletionSheet read the same elapsed value.
+      elapsedSeconds: _elapsedSeconds,
     );
     state = AsyncData(completed);
 
@@ -447,8 +463,9 @@ class SolveNotifier extends _$SolveNotifier {
     );
 
     // Restart timer
-    _timerSub?.cancel();
-    _startTimer();
+    ref.read(solveElapsedSecondsProvider(puzzleId).notifier)
+      ..reset()
+      ..start();
 
     state = AsyncData(
       s.copyWith(
@@ -513,6 +530,12 @@ class SolveNotifier extends _$SolveNotifier {
   Future<void> _saveNow() async {
     final s = _s;
     if (s == null || s.sessionId == null) return;
+    // Pull the latest elapsed value from the live notifier so the persisted
+    // row reflects the second the user actually saw, not the snapshot from
+    // the last state mutation. Terminal paths (pause/completion/reveal/reset)
+    // already snapshotted into state.elapsedSeconds — use whichever is fresher.
+    final elapsedSec =
+        s.status.isTerminal || s.isPaused ? s.elapsedSeconds : _elapsedSeconds;
     final repo = ref.read(solveRepositoryProvider);
     await repo.saveProgress(
       sessionId: s.sessionId!,
@@ -520,7 +543,7 @@ class SolveNotifier extends _$SolveNotifier {
       puzzleHeight: s.puzzle.height,
       progress: s.progress,
       focus: s.focus,
-      elapsedMs: s.elapsedSeconds * 1000,
+      elapsedMs: elapsedSec * 1000,
       status: s.status,
       isPaused: s.isPaused,
       checkCount: s.checkCount,
@@ -563,7 +586,7 @@ class SolveNotifier extends _$SolveNotifier {
       }
     }
 
-    _timerSub?.cancel();
+    ref.read(solveElapsedSecondsProvider(puzzleId).notifier).stop();
     _saveDebounce?.cancel();
 
     // Distinguish reveal-assisted from check-only from clean
@@ -572,7 +595,10 @@ class SolveNotifier extends _$SolveNotifier {
         : s.usedCheck
             ? PuzzleStatus.solvedWithHelp
             : PuzzleStatus.solved;
-    final completed = s.copyWith(status: finalStatus);
+    // Snapshot the live counter so the persisted completion + the
+    // CompletionSheet read the same elapsed value.
+    final completed =
+        s.copyWith(status: finalStatus, elapsedSeconds: _elapsedSeconds);
     state = AsyncData(completed);
 
     if (s.sessionId != null) {
