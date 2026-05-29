@@ -1,21 +1,20 @@
 import 'dart:async';
 
 import 'package:crosscue/core/database/app_database.dart';
-import 'package:crosscue/core/domain/models/enums.dart';
-import 'package:crosscue/core/domain/models/grid.dart';
 import 'package:crosscue/core/domain/models/puzzle_metadata.dart';
 import 'package:crosscue/features/archive/domain/models/archive_entry.dart';
 import 'package:crosscue/features/archive/domain/repositories/archive_repository.dart';
 import 'package:crosscue/features/import/data/daos/puzzle_dao.dart';
 import 'package:crosscue/features/solve/data/daos/solve_session_dao.dart';
-import 'package:crosscue/features/solve/domain/models/cell_progress.dart';
-import 'package:crosscue/features/solve/domain/services/clue_progress_calculator.dart';
 
 /// Provides the Archive screen's data by combining [PuzzleDao] metadata with
 /// the latest [SolveSessionRow] for each puzzle.
 ///
-/// Uses an N+1 pattern (one latestSession query per puzzle) which is
-/// acceptable at the expected library size (typically <100 puzzles).
+/// Reads the whole list in three bounded queries regardless of library size
+/// (metadata, latest-session-per-puzzle, filled-cell-counts-per-session) and
+/// computes the completion fraction from the denormalized
+/// `puzzles.fillable_cell_count` — no per-puzzle grid JSON decode. See
+/// issue #121.
 class ArchiveRepositoryImpl implements ArchiveRepository {
   const ArchiveRepositoryImpl({
     required this.puzzleDao,
@@ -31,18 +30,30 @@ class ArchiveRepositoryImpl implements ArchiveRepository {
 
   /// Returns all puzzles merged with their latest session status, ordered by
   /// import date descending (most recent first).
+  ///
+  /// Three queries total — `getAllMetadata`, `latestSessionByPuzzle`, and
+  /// `filledCellCountsBySession` — then assembled in memory. No N+1, no grid
+  /// decode.
   @override
   Future<List<ArchiveEntry>> getArchiveEntries() async {
     final allPuzzles = await puzzleDao.getAllMetadata();
-    final entries = <ArchiveEntry>[];
+    if (allPuzzles.isEmpty) return const [];
 
-    for (final puzzle in allPuzzles) {
-      final session = await sessionDao.getLatestSession(puzzle.id);
-      final completionFraction = await _completionFraction(puzzle.id, session);
-      entries.add(_buildEntry(puzzle, session, completionFraction));
-    }
+    final latestByPuzzle = await sessionDao.latestSessionByPuzzle();
+    final filledBySession = await sessionDao.filledCellCountsBySession();
 
-    return entries;
+    return [
+      for (final puzzle in allPuzzles)
+        _buildEntry(
+          puzzle,
+          latestByPuzzle[puzzle.id],
+          _completionFraction(
+            puzzle: puzzle,
+            session: latestByPuzzle[puzzle.id],
+            filledBySession: filledBySession,
+          ),
+        ),
+    ];
   }
 
   @override
@@ -72,6 +83,12 @@ class ArchiveRepositoryImpl implements ArchiveRepository {
 
     controller = StreamController<List<ArchiveEntry>>(
       onListen: () {
+        // A cell-progress write during an active solve (every ~500ms while
+        // typing) fans into a single coalesced re-emit. Pre-#121 that re-emit
+        // ran an N+1 with a full grid JSON decode per puzzle; it is now three
+        // bounded aggregate queries (metadata + latest-session-per-puzzle +
+        // filled-counts-per-session) regardless of library size, so the
+        // simple "recompute the whole list" fan-in is cheap enough to keep.
         subscriptions
           ..add(puzzleDao.watchAllMetadata().listen((_) => queueEmit()))
           ..add(sessionDao.watchAllSessions().listen((_) => queueEmit()))
@@ -139,54 +156,32 @@ class ArchiveRepositoryImpl implements ArchiveRepository {
     );
   }
 
-  Future<double> _completionFraction(
-    String puzzleId,
-    SolveSessionRow? session,
-  ) async {
+  /// Completion fraction for the latest session of [puzzle].
+  ///
+  ///   – No session            → 0
+  ///   – completed / revealed  → 1
+  ///   – in-progress           → filled cells / fillable cells
+  ///
+  /// `fillable` comes from the denormalized `puzzles.fillable_cell_count`
+  /// (in [PuzzleMetadata]); `filled` comes from the per-session non-null
+  /// `guess` count. Neither requires decoding the puzzle's grid JSON.
+  ///
+  /// A `fillableCellCount` of 0 — only possible for a row whose
+  /// `canonical_json` failed to parse during the v5 → v6 backfill — yields a
+  /// 0 fraction rather than a divide-by-zero, matching the old behaviour for
+  /// an unreadable puzzle.
+  double _completionFraction({
+    required PuzzleMetadata puzzle,
+    required SolveSessionRow? session,
+    required Map<int, int> filledBySession,
+  }) {
     if (session == null) return 0;
     if (session.status == 'completed' || session.status == 'revealed') {
       return 1;
     }
-
-    final puzzle = await puzzleDao.getPuzzle(puzzleId);
-    if (puzzle == null) return 0;
-
-    final progressRows = await sessionDao.loadCellProgress(session.id);
-    final progress = _progressGridFromRows(
-      width: puzzle.width,
-      height: puzzle.height,
-      rows: progressRows,
-    );
-
-    return ClueProgressCalculator.filledCellCompletionFraction(
-      puzzle: puzzle,
-      progress: progress,
-    );
-  }
-
-  Grid<CellProgress> _progressGridFromRows({
-    required int width,
-    required int height,
-    required List<CellProgressRow> rows,
-  }) {
-    final rowsByCell = {
-      for (final row in rows) (row.row, row.col): row,
-    };
-    return Grid<CellProgress>.generate(width, height, (row, col) {
-      final progressRow = rowsByCell[(row, col)];
-      if (progressRow == null) return CellProgress.blank;
-      return CellProgress(
-        letter: progressRow.guess ?? '',
-        state: _cellStateFromDb(progressRow.state),
-        isPencil: progressRow.isPencil,
-      );
-    });
-  }
-
-  CellState _cellStateFromDb(String value) {
-    for (final state in CellState.values) {
-      if (state.name == value) return state;
-    }
-    return CellState.empty;
+    final fillable = puzzle.fillableCellCount;
+    if (fillable <= 0) return 0;
+    final filled = filledBySession[session.id] ?? 0;
+    return (filled / fillable).clamp(0.0, 1.0);
   }
 }
