@@ -38,6 +38,44 @@ class SolveSessionDao extends DatabaseAccessor<AppDatabase>
             ..limit(1))
           .getSingleOrNull();
 
+  /// Returns the latest session per puzzle in a single query, keyed by
+  /// `puzzleId`. Replaces the per-puzzle [getLatestSession] N+1 the Archive
+  /// screen used to run — see issue #121.
+  ///
+  /// Rows are fetched ordered by `lastPlayedAt` descending and de-duplicated
+  /// in Dart (first occurrence wins), matching the `orderBy desc ..limit(1)`
+  /// semantics of [getLatestSession] per puzzle, including the tie-break.
+  Future<Map<String, SolveSessionRow>> latestSessionByPuzzle() async {
+    final rows = await (select(solveSessionsTable)
+          ..orderBy([(t) => OrderingTerm.desc(t.lastPlayedAt)]))
+        .get();
+    final byPuzzle = <String, SolveSessionRow>{};
+    for (final row in rows) {
+      byPuzzle.putIfAbsent(row.puzzleId, () => row);
+    }
+    return byPuzzle;
+  }
+
+  /// Returns the number of filled cells (non-null `guess`) per session in a
+  /// single grouped query, keyed by `sessionId`. Sessions with no filled
+  /// cells are absent from the map (callers default to 0).
+  ///
+  /// Used by the Archive completion-fraction pie together with
+  /// `puzzles.fillable_cell_count` so the fraction can be computed without
+  /// loading and JSON-decoding the full puzzle grid. See issue #121.
+  Future<Map<int, int>> filledCellCountsBySession() async {
+    final sessionId = cellProgressTable.sessionId;
+    final filled = cellProgressTable.guess.count();
+    final query = selectOnly(cellProgressTable)
+      ..addColumns([sessionId, filled])
+      ..where(cellProgressTable.guess.isNotNull())
+      ..groupBy([sessionId]);
+    final rows = await query.get();
+    return {
+      for (final row in rows) row.read(sessionId)!: row.read(filled) ?? 0,
+    };
+  }
+
   /// Emits whenever any solve session changes. Archive/Home projections use
   /// this as a table-change signal and then reload their denormalized rows.
   Stream<List<SolveSessionRow>> watchAllSessions() =>
