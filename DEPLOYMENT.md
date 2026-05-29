@@ -399,11 +399,17 @@ Go to **GitHub → repo → Settings → Secrets and variables → Actions** and
 | `APPLE_DEVELOPER_CERTIFICATE_BASE64` | `base64 -i path/to/Distribution.p12 \| pbcopy` |
 | `APPLE_DEVELOPER_CERTIFICATE_PASSWORD` | Password used when exporting the `.p12` |
 | `APPLE_PROVISIONING_PROFILE_BASE64` | `base64 -i path/to/Crosscue_App_Store.mobileprovision \| pbcopy` |
-| `APPLE_DEVELOPMENT_TEAM_ID` | `ZS9BL7472D` |
-| `APPLE_ID` | Apple ID email with App Store Connect access |
-| `APPLE_APP_SPECIFIC_PASSWORD` | App-specific password from appleid.apple.com (not your Apple ID password) |
+| `APPLE_API_KEY` | Base64-encoded App Store Connect API `.p8` private key (`base64 -i AuthKey_XXXX.p8 \| pbcopy`) |
+| `APPLE_API_KEY_ID` | The key's 10-character Key ID (e.g. `ABC123DEF4`) |
+| `APPLE_API_ISSUER_ID` | The Issuer ID (UUID) shown above the keys list in App Store Connect |
 
-The iOS job will fail-fast if any of these are missing.
+The TestFlight upload authenticates with the App Store Connect API key trio
+(`APPLE_API_KEY` / `APPLE_API_KEY_ID` / `APPLE_API_ISSUER_ID`) rather than an
+Apple ID + app-specific password — scoped role, individually revocable. The
+old `APPLE_ID`, `APPLE_APP_SPECIFIC_PASSWORD`, and `APPLE_DEVELOPMENT_TEAM_ID`
+secrets are no longer read by `release.yml` (the team ID is hardcoded in the
+`ExportOptions.plist` step); they can be deleted from the repo secrets once
+this is merged.
 
 ### One-time setup: iOS (Apple Developer portal + App Store Connect)
 
@@ -421,8 +427,12 @@ The iOS job will fail-fast if any of these are missing.
    App ID **after** the iCloud capability is enabled. Re-issue (and update
    the `APPLE_PROVISIONING_PROFILE_BASE64` secret) any time the App ID's
    capability set changes.
-6. **App-specific password** at
-   https://appleid.apple.com/account/manage → Sign-In and Security.
+6. **App Store Connect API key** at
+   https://appstoreconnect.apple.com/access/integrations/api → Team Keys.
+   Create a key with the **App Manager** role, download the `.p8` once (it is
+   not re-downloadable), and capture the Key ID and the Issuer ID. Populate
+   the `APPLE_API_KEY` (base64 of the `.p8`), `APPLE_API_KEY_ID`, and
+   `APPLE_API_ISSUER_ID` secrets.
 7. **App Store Connect app record** for bundle `dev.tomhess.crosscue` at
    https://appstoreconnect.apple.com/apps. TestFlight uploads will fail with
    `Cannot determine the Apple ID from Bundle ID` until this exists.
@@ -615,8 +625,9 @@ result is **4+**.
 
 ### Release pipeline
 - [x] `.github/workflows/release.yml` `ios` job builds and uploads a signed
-      `.ipa` to TestFlight via `xcrun altool` on macos-latest with Xcode
-      pinned via `maxim-lobanov/setup-xcode@v1`.
+      `.ipa` to TestFlight via `xcrun altool` (authenticated with an App Store
+      Connect API key) on macos-latest with Xcode pinned via
+      `maxim-lobanov/setup-xcode@v1`.
 - [x] `APPLE_*` secrets configured (see Release Pipeline § One-time setup).
 - [x] First IPA upload to TestFlight completed via `workflow_dispatch` with
       `test_flight: true` (the default).
@@ -628,10 +639,9 @@ result is **4+**.
 - Regenerate the App Store provisioning profile (and update
   `APPLE_PROVISIONING_PROFILE_BASE64`) whenever the App ID's capability set
   changes — e.g. enabling Push Notifications, adding a new iCloud container.
-- Consider migrating from `APPLE_ID + APPLE_APP_SPECIFIC_PASSWORD` to an
-  App Store Connect API key (`APPLE_API_KEY + APPLE_API_KEY_ID +
-  APPLE_API_ISSUER_ID`) before opening repo access — API keys have scoped
-  roles and can be revoked individually.
+- Rotate the App Store Connect API key (`APPLE_API_KEY` / `APPLE_API_KEY_ID` /
+  `APPLE_API_ISSUER_ID`) if it leaks or before broadening repo access — keys
+  have scoped roles and can be revoked individually in App Store Connect.
 
 ---
 
