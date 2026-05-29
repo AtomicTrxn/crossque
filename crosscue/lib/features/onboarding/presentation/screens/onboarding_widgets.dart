@@ -172,8 +172,7 @@ class _SourceChoiceView extends StatelessWidget {
             _SourceCard(
               icon: Icons.download_for_offline_outlined,
               title: 'Crosshare Daily Mini',
-              subtitle:
-                  'A fresh mini every day, synced automatically. Free.',
+              subtitle: 'A fresh mini every day, synced automatically. Free.',
               selected: wantCrosshare,
               onTap: onToggleCrosshare,
             ),
@@ -224,7 +223,8 @@ class _SourceCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final primary = context.crosscuePrimary;
     final borderColor = selected ? primary : context.crosscueDivider;
-    final bg = selected ? context.crosscuePrimaryContainer : context.crosscueSurface;
+    final bg =
+        selected ? context.crosscuePrimaryContainer : context.crosscueSurface;
 
     return Semantics(
       button: true,
@@ -277,9 +277,7 @@ class _SourceCard extends StatelessWidget {
                 ),
                 const SizedBox(width: 12),
                 Icon(
-                  selected
-                      ? Icons.check_circle
-                      : Icons.radio_button_unchecked,
+                  selected ? Icons.check_circle : Icons.radio_button_unchecked,
                   color: selected ? primary : context.crosscueOnSurface3,
                   size: 24,
                 ),
