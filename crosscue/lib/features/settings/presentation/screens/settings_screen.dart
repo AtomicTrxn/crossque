@@ -131,8 +131,8 @@ class SettingsScreen extends ConsumerWidget {
           SettingsNavRow(
             leading: Icons.help_outline,
             title: 'How to play',
-            subtitle: 'Replay the onboarding walkthrough',
-            onTap: () => context.push(Routes.onboardingReplay),
+            subtitle: 'Learn the basics with an interactive walkthrough',
+            onTap: () => context.push(Routes.howToPlay),
           ),
           SettingsNavRow(
             leading: Icons.info_outline,

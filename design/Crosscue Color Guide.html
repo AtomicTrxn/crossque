@@ -167,8 +167,8 @@ tbody tr:hover{background:rgba(255,255,255,.015)}
 <header>
   <div class="eyebrow">Crosscue · Design System</div>
   <h1>Color Guide</h1>
-  <p class="lead">Complete color token reference for Crosscue. Covers both themes, the grid interaction model, color blind mode (Option D), and shared colors. This document is the single source of truth.</p>
-  <div class="version">Version 3.5 · May 2026 · Includes Color Blind Mode</div>
+  <p class="lead">Complete color token reference for Crosscue. Covers both themes, the grid interaction model, color blind mode (Option D), shared colors, and the first-run onboarding flow. This document is the single source of truth.</p>
+  <div class="version">Version 3.6 · May 2026 · Adds onboarding setup-flow tokens</div>
 </header>
 
 <nav>
@@ -177,6 +177,7 @@ tbody tr:hover{background:rgba(255,255,255,.015)}
   <a href="#dark">Dark Mode</a>
   <a href="#shared">Shared Colors</a>
   <a href="#colorblind">Color Blind Mode</a>
+  <a href="#onboarding">Onboarding</a>
   <a href="#engineering">Engineering Table</a>
 </nav>
 
@@ -342,6 +343,42 @@ tbody tr:hover{background:rgba(255,255,255,.015)}
 
   <h3>Compound state rendering matrix</h3>
   <div class="matrix-wrap" id="matrixWrap"></div>
+</div>
+
+<!-- ═══ ONBOARDING ═══ -->
+<div class="section" id="onboarding">
+  <div class="sec-eyebrow">First-run flow</div>
+  <h2>Onboarding — Setup Flow</h2>
+  <p>The first-run flow is a 3-step sync setup (Welcome → Source choice → Fetch &amp; solve), not a tutorial. Its job is to get the player a puzzle and into solving as fast as possible. The crossword <em>how-to-play</em> tutorial moved to Settings → Help and keeps its fixed navy background (<span class="token-td">onboardingBackground #3B5280</span>) — unchanged.</p>
+
+  <div class="callout info" style="margin-top:20px">
+    <div class="callout-title">Theme-aware by default</div>
+    <p>Only the Welcome <strong style="color:var(--text)">hero</strong> uses a fixed brand gradient. Every other surface in the setup flow (source cards, fetch/result panels) draws from the standard theme-aware tokens — <span class="token-td">surface</span>, <span class="token-td">primaryContainer</span>, <span class="token-td">onSurface 1/2/3</span>, <span class="token-td">correct</span>, <span class="token-td">incorrect</span> — so the transition into the live solve screen is seamless.</p>
+  </div>
+
+  <h3>New tokens (v3.6)</h3>
+  <div class="swatch-group">
+    <div class="swatch"><div class="swatch-color" style="background:linear-gradient(#1565C0,#0A2A6E)"></div><div class="swatch-info"><div class="swatch-name">onbHeroGrad · Light <span class="badge b-new">NEW</span></div><div class="swatch-hex">#1565C0 → #0A2A6E</div><div class="swatch-note">Welcome hero, top → bottom</div></div></div>
+    <div class="swatch"><div class="swatch-color" style="background:linear-gradient(#0A2A6E,#060810)"></div><div class="swatch-info"><div class="swatch-name">onbHeroGrad · Dark <span class="badge b-new">NEW</span></div><div class="swatch-hex">#0A2A6E → #060810</div><div class="swatch-note">Welcome hero, top → bottom</div></div></div>
+    <div class="swatch"><div class="swatch-color" style="background:#1565C0"></div><div class="swatch-info"><div class="swatch-name">onbCardSelectedBorder</div><div class="swatch-hex">= primary</div><div class="swatch-note">2px border on a selected source card (L #1565C0 / D #7EB8F7) — reuses primary, no new value</div></div></div>
+  </div>
+
+  <h3>Per-element mapping</h3>
+  <div class="table-wrap" style="margin-top:14px">
+    <table>
+      <thead><tr><th>Element</th><th>Token</th><th>Notes</th></tr></thead>
+      <tbody>
+        <tr><td style="color:var(--text);font-weight:500">Welcome hero bg</td><td class="token-td">onbHeroGrad (L/D)</td><td class="note-td">White text + CTA; clears AA at both stops</td></tr>
+        <tr><td style="color:var(--text);font-weight:500">Welcome CTA</td><td class="token-td">#FFFFFF on hero / label deepNavy</td><td class="note-td">Inverted so it reads on the gradient</td></tr>
+        <tr><td style="color:var(--text);font-weight:500">Source card — unselected</td><td class="token-td">surface + 1px divider</td><td class="note-td">—</td></tr>
+        <tr><td style="color:var(--text);font-weight:500">Source card — selected</td><td class="token-td">primaryContainer + 2px primary</td><td class="note-td">Check icon in primary</td></tr>
+        <tr><td style="color:var(--text);font-weight:500">Fetch — success / duplicate</td><td class="token-td">correct</td><td class="note-td">Icon tint only</td></tr>
+        <tr><td style="color:var(--text);font-weight:500">Fetch — failure</td><td class="token-td">incorrect</td><td class="note-td">Reassuring copy, not destructive</td></tr>
+        <tr><td style="color:var(--text);font-weight:500">"How to play" footer link</td><td class="token-td">primary</td><td class="note-td">Never onSurface3 — fails AA on bg</td></tr>
+        <tr><td style="color:var(--text);font-weight:500">Page dots — active / inactive</td><td class="token-td">primary / onSurface3 @40%</td><td class="note-td">On hero: amber / white @40%</td></tr>
+      </tbody>
+    </table>
+  </div>
 </div>
 
 <!-- ═══ ENGINEERING ═══ -->
@@ -616,6 +653,10 @@ const ENG=[
   {tok:'difficultyEasy',     l:'#4CAF50',        d:'#4CAF50',       cbl:null,cbd:null,li:false,di:false,ti:true},
   {tok:'difficultyHard',     l:'#FF9800',        d:'#FF9800',       cbl:null,cbd:null,li:false,di:false,ti:true,note:'Also used as streakAccent — share the value, no new token needed'},
   {tok:'streakAccent',       l:'= difficultyHard',d:'= difficultyHard',cbl:null,cbd:null,li:false,di:false,ti:true,note:'#FF9800 — reuse difficultyHard value; do not define a separate color'},
+  {sec:'Onboarding — setup flow (v3.6)'},
+  {tok:'onbHeroGradStart',   l:'#1565C0',        d:'#0A2A6E',       cbl:null,cbd:null,li:true, di:true, note:'Welcome hero gradient — top stop (= primary L / deepNavy D)'},
+  {tok:'onbHeroGradEnd',     l:'#0A2A6E',        d:'#060810',       cbl:null,cbd:null,li:true, di:true, note:'Welcome hero gradient — bottom stop (= deepNavy L / gridBlackDark D)'},
+  {tok:'onbCardSelectedBorder',l:'#1565C0',      d:'#7EB8F7',       cbl:null,cbd:null,li:false,di:false,note:'= primary — selected source-card border; no new value'},
 ];
 
 function hc(val,isNew,isCB){

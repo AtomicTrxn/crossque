@@ -140,12 +140,24 @@ abstract class CrosscueColors {
   static const Color segmentedControlBgLight = Color(0xFFE8E8E8);
   static const Color segmentedControlBgDark = Color(0xFF1A2030);
 
-  // ── Onboarding (v3.5) ──────────────────────────────────────────────────────
-  // Fixed brand navy used for the onboarding background — theme-independent so
-  // the tour reads consistently regardless of system light/dark mode.
+  // ── Onboarding tutorial (v3.5) ──────────────────────────────────────────────
+  // Fixed brand navy used by the "How to play" tutorial background — theme-
+  // independent so the walkthrough reads consistently regardless of system
+  // light/dark mode. (As of v3.6 this is the tutorial in Settings → Help, not
+  // first-run onboarding.)
   static const Color onboardingBackground = Color(0xFF3B5280);
   // Inactive pagination-dot color (white at 40% alpha).
   static const Color onboardingDotInactive = Color(0x66FFFFFF);
+
+  // ── Onboarding setup flow (v3.6) ────────────────────────────────────────────
+  // The first-run sync-setup flow uses theme-aware surfaces (see
+  // [CrosscueThemeColors]); only the Welcome hero keeps a fixed brand gradient.
+  // Card selection reuses [primary]/[primaryLight] as the selected border — no
+  // separate token is needed.
+  static const Color onbHeroGradStartLight = primary; // #1565C0
+  static const Color onbHeroGradEndLight = deepNavy; // #0A2A6E
+  static const Color onbHeroGradStartDark = deepNavy; // #0A2A6E
+  static const Color onbHeroGradEndDark = gridBlackDark; // #060810
 
   // ── Disabled buttons (v3.5) ────────────────────────────────────────────────
   static const Color buttonDisabledBgLight = Color(0xFFE0E0E0);
