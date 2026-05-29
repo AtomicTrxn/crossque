@@ -16,10 +16,6 @@ still worth tracking after the current cleanup pass.
   The Dart transport + Swift handler ship and the Apple-side
   entitlements / container were configured during iOS 1.0. The UI
   surface to actually opt users in is the remaining work.
-- **Migrate altool to App Store Connect API key** — replace
-  `APPLE_ID + APPLE_APP_SPECIFIC_PASSWORD` in `release.yml` with
-  `APPLE_API_KEY + APPLE_API_KEY_ID + APPLE_API_ISSUER_ID`. Better
-  scoping + revocation; recommended before broadening repo access.
 
 ## Recently closed — iOS 1.0 launch
 
@@ -50,6 +46,9 @@ finished during the v1.2.7 release push:
 
 ## Recently closed from the review pass
 
+- Migrated the TestFlight upload off `APPLE_ID + APPLE_APP_SPECIFIC_PASSWORD`
+  to an App Store Connect API key (`APPLE_API_KEY` / `APPLE_API_KEY_ID` /
+  `APPLE_API_ISSUER_ID`) — scoped role, individually revocable.
 - Removed duplicate annotations and hot-path RegExp allocations.
 - Centralized archive status presentation and shared Home/Archive puzzle rows.
 - Moved solve-side effects out of `build` and switched archive/home data to

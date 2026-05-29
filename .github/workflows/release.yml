@@ -264,24 +264,29 @@ jobs:
             --build-number=${{ steps.version.outputs.code }} \
             --export-options-plist="$RUNNER_TEMP/ExportOptions.plist"
 
-      # Apple ID + app-specific password is the simplest auth path for altool;
-      # an App Store Connect API key would also work but needs an additional
-      # secret (issuer ID) we haven't provisioned. --asc-provider disambiguates
-      # if the Apple ID has access to multiple teams.
+      # Auth via an App Store Connect API key (scoped role, individually
+      # revocable) instead of an Apple ID + app-specific password. altool
+      # locates the .p8 private key by APPLE_API_KEY_ID, expecting it at
+      # ~/.appstoreconnect/private_keys/AuthKey_<id>.p8. The key is team-scoped,
+      # so no --asc-provider is needed.
       - name: Upload to TestFlight
         if: ${{ inputs.test_flight == true }}
         env:
-          APPLE_ID: ${{ secrets.APPLE_ID }}
-          APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
-          APPLE_DEVELOPMENT_TEAM_ID: ${{ secrets.APPLE_DEVELOPMENT_TEAM_ID }}
+          APPLE_API_KEY: ${{ secrets.APPLE_API_KEY }}
+          APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
+          APPLE_API_ISSUER_ID: ${{ secrets.APPLE_API_ISSUER_ID }}
         run: |
+          KEY_DIR="$HOME/.appstoreconnect/private_keys"
+          mkdir -p "$KEY_DIR"
+          echo "$APPLE_API_KEY" | base64 --decode \
+            > "$KEY_DIR/AuthKey_$APPLE_API_KEY_ID.p8"
+
           IPA_PATH=$(ls build/ios/ipa/*.ipa | head -1)
           xcrun altool --upload-app \
             --type ios \
             --file "$IPA_PATH" \
-            --username "$APPLE_ID" \
-            --password "$APPLE_APP_SPECIFIC_PASSWORD" \
-            --asc-provider "$APPLE_DEVELOPMENT_TEAM_ID"
+            --apiKey "$APPLE_API_KEY_ID" \
+            --apiIssuer "$APPLE_API_ISSUER_ID"
 
   github_release:
     name: Publish GitHub Release
