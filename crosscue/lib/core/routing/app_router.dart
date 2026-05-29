@@ -2,6 +2,7 @@ import 'package:crosscue/core/routing/app_shell.dart';
 import 'package:crosscue/core/routing/routes.dart';
 import 'package:crosscue/features/archive/presentation/screens/archive_screen.dart';
 import 'package:crosscue/features/home/presentation/screens/home_screen.dart';
+import 'package:crosscue/features/how_to_play/presentation/screens/how_to_play_screen.dart';
 import 'package:crosscue/features/import/presentation/screens/import_screen.dart';
 import 'package:crosscue/features/onboarding/presentation/screens/onboarding_screen.dart';
 import 'package:crosscue/features/settings/presentation/providers/settings_providers.dart';
@@ -27,12 +28,9 @@ GoRouter appRouter(Ref ref) {
     initialLocation: Routes.home,
     redirect: (context, state) {
       final onOnboarding = state.matchedLocation == Routes.onboarding;
-      final replayOnboarding = state.uri.queryParameters['replay'] == '1';
 
       if (!hasOnboarded && !onOnboarding) return Routes.onboarding;
-      if (hasOnboarded && onOnboarding && !replayOnboarding) {
-        return Routes.home;
-      }
+      if (hasOnboarded && onOnboarding) return Routes.home;
       return null;
     },
     routes: [
@@ -102,6 +100,10 @@ GoRouter appRouter(Ref ref) {
                   GoRoute(
                     path: 'privacy',
                     builder: (context, state) => const PrivacyScreen(),
+                  ),
+                  GoRoute(
+                    path: 'howto',
+                    builder: (context, state) => const HowToPlayScreen(),
                   ),
                 ],
               ),

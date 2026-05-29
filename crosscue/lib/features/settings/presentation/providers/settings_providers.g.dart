@@ -472,7 +472,7 @@ final class CrosshareAutoDownloadProvider
 }
 
 String _$crosshareAutoDownloadHash() =>
-    r'e34e25c4190aaf10775f6c19632855f09496a00f';
+    r'68134f5771944083883d072c74d04b26c23dd419';
 
 abstract class _$CrosshareAutoDownload extends $Notifier<bool> {
   bool build();

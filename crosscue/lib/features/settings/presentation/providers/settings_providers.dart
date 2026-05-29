@@ -176,6 +176,15 @@ class CrosshareAutoDownload extends _$CrosshareAutoDownload {
     }
   }
 
+  /// Turns auto-download on and persists it, without kicking off a background
+  /// fetch. Used by first-run onboarding, where the setup flow drives the
+  /// initial download itself (via [CrosshareNotifier]) so it can show progress.
+  Future<void> enable() async {
+    if (state) return;
+    state = true;
+    await ref.read(appSettingsProvider).setCrosshareAutoDownload(true);
+  }
+
   Future<void> reset() async {
     state = BootSettings.defaults.crosshareAutoDownload;
     await ref.read(appSettingsProvider).setCrosshareAutoDownload(state);

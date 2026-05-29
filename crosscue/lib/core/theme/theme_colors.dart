@@ -54,4 +54,17 @@ extension CrosscueThemeColors on BuildContext {
   Color get crosscueToggleTrackOff => isCrosscueLight
       ? CrosscueColors.toggleTrackOffLight
       : CrosscueColors.toggleTrackOffDark;
+
+  /// Welcome-screen hero gradient stops (top → bottom). A fixed brand navy
+  /// gradient, distinct from the theme-aware surfaces the rest of the setup
+  /// flow uses; on white text it clears WCAG AA at both stops.
+  List<Color> get crosscueOnbHeroGradient => isCrosscueLight
+      ? const [
+          CrosscueColors.onbHeroGradStartLight,
+          CrosscueColors.onbHeroGradEndLight,
+        ]
+      : const [
+          CrosscueColors.onbHeroGradStartDark,
+          CrosscueColors.onbHeroGradEndDark,
+        ];
 }
